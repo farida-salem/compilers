@@ -503,8 +503,8 @@ State 30
    18 declaration: type decl_list • ';'
    19 decl_list: decl_list • ',' IDENTIFIER
 
-    ','  shift, and go to state 50
-    ';'  shift, and go to state 51
+    ';'  shift, and go to state 50
+    ','  shift, and go to state 51
 
 
 State 31
@@ -648,16 +648,16 @@ State 49
 
 State 50
 
-   19 decl_list: decl_list ',' • IDENTIFIER
+   18 declaration: type decl_list ';' •
 
-    IDENTIFIER  shift, and go to state 66
+    $default  reduce using rule 18 (declaration)
 
 
 State 51
 
-   18 declaration: type decl_list ';' •
+   19 decl_list: decl_list ',' • IDENTIFIER
 
-    $default  reduce using rule 18 (declaration)
+    IDENTIFIER  shift, and go to state 66
 
 
 State 52
@@ -885,9 +885,9 @@ State 68
     MULT   shift, and go to state 80
     DIV    shift, and go to state 81
     MOD    shift, and go to state 82
+    ')'    shift, and go to state 85
     '<'    shift, and go to state 83
     '>'    shift, and go to state 84
-    ')'    shift, and go to state 85
 
 
 State 69
@@ -914,9 +914,9 @@ State 69
     MULT   shift, and go to state 80
     DIV    shift, and go to state 81
     MOD    shift, and go to state 82
+    ')'    shift, and go to state 86
     '<'    shift, and go to state 83
     '>'    shift, and go to state 84
-    ')'    shift, and go to state 86
 
 
 State 70
@@ -957,9 +957,9 @@ State 72
     MULT   shift, and go to state 80
     DIV    shift, and go to state 81
     MOD    shift, and go to state 82
+    ')'    shift, and go to state 89
     '<'    shift, and go to state 83
     '>'    shift, and go to state 84
-    ')'    shift, and go to state 89
 
 
 State 73
@@ -986,9 +986,9 @@ State 73
     MULT   shift, and go to state 80
     DIV    shift, and go to state 81
     MOD    shift, and go to state 82
+    ')'    shift, and go to state 90
     '<'    shift, and go to state 83
     '>'    shift, and go to state 84
-    ')'    shift, and go to state 90
 
 
 State 74
@@ -1519,9 +1519,9 @@ State 104
     MULT   shift, and go to state 80
     DIV    shift, and go to state 81
     MOD    shift, and go to state 82
+    ')'    shift, and go to state 108
     '<'    shift, and go to state 83
     '>'    shift, and go to state 84
-    ')'    shift, and go to state 108
 
 
 State 105
@@ -1548,9 +1548,9 @@ State 105
     MULT   shift, and go to state 80
     DIV    shift, and go to state 81
     MOD    shift, and go to state 82
+    ';'    shift, and go to state 109
     '<'    shift, and go to state 83
     '>'    shift, and go to state 84
-    ';'    shift, and go to state 109
 
 
 State 106

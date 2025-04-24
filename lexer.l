@@ -1,72 +1,72 @@
 %{
 #include <stdlib.h>
-#include <string.h>    
+#include <string.h>
 #include "parser.tab.h"
-
-
-
 %}
 
 DIGIT       [0-9]
 LETTER      [A-Za-z_]
 ID          {LETTER}({LETTER}|{DIGIT})*
-NUM         {DIGIT}+(\.{DIGIT}+)?
 
 %%
 
-[ \t\n]+;
-"//".* ;
-"/*"([^*]|\*+[^*/])*\*+"/"*;
+[ \t\r\n]+        ;  // This rule ignores whitespace and does not need a print
 
-"if"           return IF;
-"then"         return THEN;
-"else"         return ELSE;
-"while"        return WHILE;
-"repeat"       return REPEAT;
-"until"        return UNTIL;
-"for"          return FOR;
-"switch"       return SWITCH;
-"case"         return CASE;
-"default"      return DEFAULT;
-"break"        return BREAK;
-"continue"     return CONTINUE;
-"return"       return RETURN;
+"//".*            ;  // Single-line comment (no print here unless needed)
 
-"int"          return INT;
-"float"        return FLOAT;
-"char"         return CHAR;
-"void"         return VOID;
-"const"        return CONST;
+"/*"([^*]|\*+[^*/])*\*+"/"* ;  // Multi-line comment (no print here unless needed)
 
-"=="           return EQ;
-"!="           return NEQ;
-"<="           return LE;
-">="           return GE;
+"if"              { printf("Keyword IF: %s\n", yytext); return IF; }
+"then"            { printf("Keyword THEN: %s\n", yytext); return THEN; }
+"else"            { printf("Keyword ELSE: %s\n", yytext); return ELSE; }
+"while"           { printf("Keyword WHILE: %s\n", yytext); return WHILE; }
+"repeat"          { printf("Keyword REPEAT: %s\n", yytext); return REPEAT; }
+"until"           { printf("Keyword UNTIL: %s\n", yytext); return UNTIL; }
+"for"             { printf("Keyword FOR: %s\n", yytext); return FOR; }
+"switch"          { printf("Keyword SWITCH: %s\n", yytext); return SWITCH; }
+"case"            { printf("Keyword CASE: %s\n", yytext); return CASE; }
+"default"         { printf("Keyword DEFAULT: %s\n", yytext); return DEFAULT; }
+"break"           { printf("Keyword BREAK: %s\n", yytext); return BREAK; }
+"continue"        { printf("Keyword CONTINUE: %s\n", yytext); return CONTINUE; }
+"return"          { printf("Keyword RETURN: %s\n", yytext); return RETURN; }
 
-"<"            return '<';
-">"            return '>';
-"="            return '=';
-"+"            return PLUS;
-"-"            return MINUS;
-"*"            return MULT;
-"/"            return DIV;
-"%"            return MOD;
+"int"             { printf("Type INT: %s\n", yytext); return INT; }
+"float"           { printf("Type FLOAT: %s\n", yytext); return FLOAT; }
+"char"            { printf("Type CHAR: %s\n", yytext); return CHAR; }
+"void"            { printf("Type VOID: %s\n", yytext); return VOID; }
+"const"           { printf("Keyword CONST: %s\n", yytext); return CONST; }
 
-";"            return ';';
-","            return ',';
-"("            return '(';
-")"            return ')';
-"{"            return '{';
-"}"            return '}';
-":"            return ':';
+"=="              { printf("Operator EQ: %s\n", yytext); return EQ; }
+"!="              { printf("Operator NEQ: %s\n", yytext); return NEQ; }
+"<="              { printf("Operator LE: %s\n", yytext); return LE; }
+">="              { printf("Operator GE: %s\n", yytext); return GE; }
 
-{NUM}                   { yylval.num = atof(yytext); return NUMBER; }
-{ID}                    { yylval.id = strdup(yytext); return IDENTIFIER; }
+"<"               { printf("Operator < : %s\n", yytext); return '<'; }
+">"               { printf("Operator > : %s\n", yytext); return '>'; }
+"="               { printf("Operator = : %s\n", yytext); return '='; }
+"+"               { printf("Operator PLUS: %s\n", yytext); return PLUS; }
+"-"               { printf("Operator MINUS: %s\n", yytext); return MINUS; }
+"*"               { printf("Operator MULT: %s\n", yytext); return MULT; }
+"/"               { printf("Operator DIV: %s\n", yytext); return DIV; }
+"%"               { printf("Operator MOD: %s\n", yytext); return MOD; }
 
-.                       { return yytext[0]; }
+";"               { printf("Semicolon ;\n"); return ';'; }
+","               { printf("Comma ,\n"); return ','; }
+"("               { printf("Left Parenthesis (\n"); return '('; }
+")"               { printf("Right Parenthesis )\n"); return ')'; }
+"{"               { printf("Left Brace {\n"); return '{'; }
+"}"               { printf("Right Brace }\n"); return '}'; }
+":"               { printf("Colon :\n"); return ':'; }
+
+{ID}              { printf("IDENTIFIER: %s\n", yytext); yylval.id = strdup(yytext); return IDENTIFIER; }
+{DIGIT}+"."{DIGIT}+   { printf("NUMBER: %s\n", yytext); yylval.num = atof(yytext); return NUMBER; }
+{DIGIT}+             { printf("NUMBER: %s\n", yytext); yylval.num = atof(yytext); return NUMBER; }
+
+.                 { printf("Unknown token (hex): 0x%02x\n", yytext[0]); return yytext[0]; }
 
 %%
+
 
 int yywrap() {
-    return 1; // Indicates end of input
+    return 1;
 }

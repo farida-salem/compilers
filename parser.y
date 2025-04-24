@@ -1,14 +1,13 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
-extern FILE *yyin;
 
-void yyerror(const char *s) {
-    fprintf(stderr, "Error: %s\n", s);
-    exit(1);
-}
+void yyerror(const char *s);
 int yylex(void);
+extern FILE *yyin;
 %}
+
+%define parse.error verbose
 
 %union {
     int num;
@@ -22,13 +21,14 @@ int yylex(void);
 %token INT FLOAT CHAR VOID CONST
 %token EQ NEQ LE GE
 %token PLUS MINUS MULT DIV MOD
+%token ';' ',' '(' ')' '{' '}' '=' '<' '>' ':'
 
-// revisit
 %left PLUS MINUS
 %left MULT DIV MOD
 %nonassoc EQ NEQ '<' '>' LE GE
 
 %%
+
 program
     : functions
     ;
@@ -40,6 +40,7 @@ functions
 
 function
     : type IDENTIFIER '(' params ')' block
+    |
     ;
 
 params
@@ -55,6 +56,8 @@ param_list
 param
     : type IDENTIFIER
     ;
+
+
 
 type
     : INT
@@ -105,7 +108,7 @@ assignment
     ;
 
 if_statement
-    : IF '(' expression ')' THEN statement ELSE statement
+    : IF '(' expression ')' statement ELSE statement
     ;
 
 while_statement
@@ -158,17 +161,22 @@ expression
 
 %%
 
+void yyerror(const char *s) {
+    fprintf(stderr, "Error: %s\n", s);
+    exit(1);
+}
+
 int main(int argc, char **argv) {
-    if(argc > 1) {
+    if (argc > 1) {
         yyin = fopen(argv[1], "r");
         if (!yyin) {
-            fprintf(stderr, "Error opening file: %s\n", argv[1]);
+            perror("Error opening input file");
             return 1;
         }
-    } 
-    if(yyparse()==0){
+    }
+    if (yyparse() == 0) {
+        printf("Parsing completed successfully.\n");
         return 0;
     }
-
     return 1;
 }
