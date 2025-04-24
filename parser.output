@@ -1,0 +1,1797 @@
+Grammar
+
+    0 $accept: program $end
+
+    1 program: functions
+
+    2 functions: functions function
+    3          | function
+
+    4 function: type IDENTIFIER '(' params ')' block
+
+    5 params: param_list
+    6       | ε
+
+    7 param_list: param_list ',' param
+    8           | param
+
+    9 param: type IDENTIFIER
+
+   10 type: INT
+   11     | FLOAT
+   12     | CHAR
+   13     | VOID
+   14     | CONST type
+
+   15 block: '{' declarations statements '}'
+
+   16 declarations: declarations declaration
+   17             | ε
+
+   18 declaration: type decl_list ';'
+
+   19 decl_list: decl_list ',' IDENTIFIER
+   20          | IDENTIFIER
+
+   21 statements: statements statement
+   22           | ε
+
+   23 statement: assignment ';'
+   24          | if_statement
+   25          | while_statement
+   26          | repeat_until_statement
+   27          | for_statement
+   28          | switch_statement
+   29          | return_statement ';'
+   30          | BREAK ';'
+   31          | CONTINUE ';'
+   32          | block
+
+   33 assignment: IDENTIFIER '=' expression
+
+   34 if_statement: IF '(' expression ')' THEN statement ELSE statement
+
+   35 while_statement: WHILE '(' expression ')' statement
+
+   36 repeat_until_statement: REPEAT statements UNTIL '(' expression ')' ';'
+
+   37 for_statement: FOR '(' assignment ';' expression ';' assignment ')' statement
+
+   38 switch_statement: SWITCH '(' expression ')' '{' case_list '}'
+
+   39 case_list: case_list CASE constant ':' statements
+   40          | case_list DEFAULT ':' statements
+   41          | ε
+
+   42 constant: NUMBER
+   43         | IDENTIFIER
+
+   44 return_statement: RETURN expression
+
+   45 expression: expression PLUS expression
+   46           | expression MINUS expression
+   47           | expression MULT expression
+   48           | expression DIV expression
+   49           | expression MOD expression
+   50           | expression EQ expression
+   51           | expression NEQ expression
+   52           | expression '<' expression
+   53           | expression '>' expression
+   54           | expression LE expression
+   55           | expression GE expression
+   56           | '(' expression ')'
+   57           | IDENTIFIER
+   58           | NUMBER
+
+
+Terminals, with rules where they appear
+
+    $end (0) 0
+    '(' (40) 4 34 35 36 37 38 56
+    ')' (41) 4 34 35 36 37 38 56
+    ',' (44) 7 19
+    ':' (58) 39 40
+    ';' (59) 18 23 29 30 31 36 37
+    '<' (60) 52
+    '=' (61) 33
+    '>' (62) 53
+    '{' (123) 15 38
+    '}' (125) 15 38
+    error (256)
+    NUMBER <num> (258) 42 58
+    IDENTIFIER <id> (259) 4 9 19 20 33 43 57
+    IF (260) 34
+    THEN (261) 34
+    ELSE (262) 34
+    WHILE (263) 35
+    REPEAT (264) 36
+    UNTIL (265) 36
+    FOR (266) 37
+    SWITCH (267) 38
+    CASE (268) 39
+    DEFAULT (269) 40
+    BREAK (270) 30
+    CONTINUE (271) 31
+    RETURN (272) 44
+    INT (273) 10
+    FLOAT (274) 11
+    CHAR (275) 12
+    VOID (276) 13
+    CONST (277) 14
+    EQ (278) 50
+    NEQ (279) 51
+    LE (280) 54
+    GE (281) 55
+    PLUS (282) 45
+    MINUS (283) 46
+    MULT (284) 47
+    DIV (285) 48
+    MOD (286) 49
+
+
+Nonterminals, with rules where they appear
+
+    $accept (42)
+        on left: 0
+    program (43)
+        on left: 1
+        on right: 0
+    functions (44)
+        on left: 2 3
+        on right: 1 2
+    function (45)
+        on left: 4
+        on right: 2 3
+    params (46)
+        on left: 5 6
+        on right: 4
+    param_list (47)
+        on left: 7 8
+        on right: 5 7
+    param (48)
+        on left: 9
+        on right: 7 8
+    type (49)
+        on left: 10 11 12 13 14
+        on right: 4 9 14 18
+    block (50)
+        on left: 15
+        on right: 4 32
+    declarations (51)
+        on left: 16 17
+        on right: 15 16
+    declaration (52)
+        on left: 18
+        on right: 16
+    decl_list (53)
+        on left: 19 20
+        on right: 18 19
+    statements (54)
+        on left: 21 22
+        on right: 15 21 36 39 40
+    statement (55)
+        on left: 23 24 25 26 27 28 29 30 31 32
+        on right: 21 34 35 37
+    assignment (56)
+        on left: 33
+        on right: 23 37
+    if_statement (57)
+        on left: 34
+        on right: 24
+    while_statement (58)
+        on left: 35
+        on right: 25
+    repeat_until_statement (59)
+        on left: 36
+        on right: 26
+    for_statement (60)
+        on left: 37
+        on right: 27
+    switch_statement (61)
+        on left: 38
+        on right: 28
+    case_list (62)
+        on left: 39 40 41
+        on right: 38 39 40
+    constant (63)
+        on left: 42 43
+        on right: 39
+    return_statement (64)
+        on left: 44
+        on right: 29
+    expression (65)
+        on left: 45 46 47 48 49 50 51 52 53 54 55 56 57 58
+        on right: 33 34 35 36 37 38 44 45 46 47 48 49 50 51 52 53 54 55 56
+
+
+State 0
+
+    0 $accept: • program $end
+
+    INT    shift, and go to state 1
+    FLOAT  shift, and go to state 2
+    CHAR   shift, and go to state 3
+    VOID   shift, and go to state 4
+    CONST  shift, and go to state 5
+
+    program    go to state 6
+    functions  go to state 7
+    function   go to state 8
+    type       go to state 9
+
+
+State 1
+
+   10 type: INT •
+
+    $default  reduce using rule 10 (type)
+
+
+State 2
+
+   11 type: FLOAT •
+
+    $default  reduce using rule 11 (type)
+
+
+State 3
+
+   12 type: CHAR •
+
+    $default  reduce using rule 12 (type)
+
+
+State 4
+
+   13 type: VOID •
+
+    $default  reduce using rule 13 (type)
+
+
+State 5
+
+   14 type: CONST • type
+
+    INT    shift, and go to state 1
+    FLOAT  shift, and go to state 2
+    CHAR   shift, and go to state 3
+    VOID   shift, and go to state 4
+    CONST  shift, and go to state 5
+
+    type  go to state 10
+
+
+State 6
+
+    0 $accept: program • $end
+
+    $end  shift, and go to state 11
+
+
+State 7
+
+    1 program: functions •
+    2 functions: functions • function
+
+    INT    shift, and go to state 1
+    FLOAT  shift, and go to state 2
+    CHAR   shift, and go to state 3
+    VOID   shift, and go to state 4
+    CONST  shift, and go to state 5
+
+    $default  reduce using rule 1 (program)
+
+    function  go to state 12
+    type      go to state 9
+
+
+State 8
+
+    3 functions: function •
+
+    $default  reduce using rule 3 (functions)
+
+
+State 9
+
+    4 function: type • IDENTIFIER '(' params ')' block
+
+    IDENTIFIER  shift, and go to state 13
+
+
+State 10
+
+   14 type: CONST type •
+
+    $default  reduce using rule 14 (type)
+
+
+State 11
+
+    0 $accept: program $end •
+
+    $default  accept
+
+
+State 12
+
+    2 functions: functions function •
+
+    $default  reduce using rule 2 (functions)
+
+
+State 13
+
+    4 function: type IDENTIFIER • '(' params ')' block
+
+    '('  shift, and go to state 14
+
+
+State 14
+
+    4 function: type IDENTIFIER '(' • params ')' block
+
+    INT    shift, and go to state 1
+    FLOAT  shift, and go to state 2
+    CHAR   shift, and go to state 3
+    VOID   shift, and go to state 4
+    CONST  shift, and go to state 5
+
+    $default  reduce using rule 6 (params)
+
+    params      go to state 15
+    param_list  go to state 16
+    param       go to state 17
+    type        go to state 18
+
+
+State 15
+
+    4 function: type IDENTIFIER '(' params • ')' block
+
+    ')'  shift, and go to state 19
+
+
+State 16
+
+    5 params: param_list •
+    7 param_list: param_list • ',' param
+
+    ','  shift, and go to state 20
+
+    $default  reduce using rule 5 (params)
+
+
+State 17
+
+    8 param_list: param •
+
+    $default  reduce using rule 8 (param_list)
+
+
+State 18
+
+    9 param: type • IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 21
+
+
+State 19
+
+    4 function: type IDENTIFIER '(' params ')' • block
+
+    '{'  shift, and go to state 22
+
+    block  go to state 23
+
+
+State 20
+
+    7 param_list: param_list ',' • param
+
+    INT    shift, and go to state 1
+    FLOAT  shift, and go to state 2
+    CHAR   shift, and go to state 3
+    VOID   shift, and go to state 4
+    CONST  shift, and go to state 5
+
+    param  go to state 24
+    type   go to state 18
+
+
+State 21
+
+    9 param: type IDENTIFIER •
+
+    $default  reduce using rule 9 (param)
+
+
+State 22
+
+   15 block: '{' • declarations statements '}'
+
+    $default  reduce using rule 17 (declarations)
+
+    declarations  go to state 25
+
+
+State 23
+
+    4 function: type IDENTIFIER '(' params ')' block •
+
+    $default  reduce using rule 4 (function)
+
+
+State 24
+
+    7 param_list: param_list ',' param •
+
+    $default  reduce using rule 7 (param_list)
+
+
+State 25
+
+   15 block: '{' declarations • statements '}'
+   16 declarations: declarations • declaration
+
+    INT    shift, and go to state 1
+    FLOAT  shift, and go to state 2
+    CHAR   shift, and go to state 3
+    VOID   shift, and go to state 4
+    CONST  shift, and go to state 5
+
+    $default  reduce using rule 22 (statements)
+
+    type         go to state 26
+    declaration  go to state 27
+    statements   go to state 28
+
+
+State 26
+
+   18 declaration: type • decl_list ';'
+
+    IDENTIFIER  shift, and go to state 29
+
+    decl_list  go to state 30
+
+
+State 27
+
+   16 declarations: declarations declaration •
+
+    $default  reduce using rule 16 (declarations)
+
+
+State 28
+
+   15 block: '{' declarations statements • '}'
+   21 statements: statements • statement
+
+    IDENTIFIER  shift, and go to state 31
+    IF          shift, and go to state 32
+    WHILE       shift, and go to state 33
+    REPEAT      shift, and go to state 34
+    FOR         shift, and go to state 35
+    SWITCH      shift, and go to state 36
+    BREAK       shift, and go to state 37
+    CONTINUE    shift, and go to state 38
+    RETURN      shift, and go to state 39
+    '{'         shift, and go to state 22
+    '}'         shift, and go to state 40
+
+    block                   go to state 41
+    statement               go to state 42
+    assignment              go to state 43
+    if_statement            go to state 44
+    while_statement         go to state 45
+    repeat_until_statement  go to state 46
+    for_statement           go to state 47
+    switch_statement        go to state 48
+    return_statement        go to state 49
+
+
+State 29
+
+   20 decl_list: IDENTIFIER •
+
+    $default  reduce using rule 20 (decl_list)
+
+
+State 30
+
+   18 declaration: type decl_list • ';'
+   19 decl_list: decl_list • ',' IDENTIFIER
+
+    ','  shift, and go to state 50
+    ';'  shift, and go to state 51
+
+
+State 31
+
+   33 assignment: IDENTIFIER • '=' expression
+
+    '='  shift, and go to state 52
+
+
+State 32
+
+   34 if_statement: IF • '(' expression ')' THEN statement ELSE statement
+
+    '('  shift, and go to state 53
+
+
+State 33
+
+   35 while_statement: WHILE • '(' expression ')' statement
+
+    '('  shift, and go to state 54
+
+
+State 34
+
+   36 repeat_until_statement: REPEAT • statements UNTIL '(' expression ')' ';'
+
+    $default  reduce using rule 22 (statements)
+
+    statements  go to state 55
+
+
+State 35
+
+   37 for_statement: FOR • '(' assignment ';' expression ';' assignment ')' statement
+
+    '('  shift, and go to state 56
+
+
+State 36
+
+   38 switch_statement: SWITCH • '(' expression ')' '{' case_list '}'
+
+    '('  shift, and go to state 57
+
+
+State 37
+
+   30 statement: BREAK • ';'
+
+    ';'  shift, and go to state 58
+
+
+State 38
+
+   31 statement: CONTINUE • ';'
+
+    ';'  shift, and go to state 59
+
+
+State 39
+
+   44 return_statement: RETURN • expression
+
+    NUMBER      shift, and go to state 60
+    IDENTIFIER  shift, and go to state 61
+    '('         shift, and go to state 62
+
+    expression  go to state 63
+
+
+State 40
+
+   15 block: '{' declarations statements '}' •
+
+    $default  reduce using rule 15 (block)
+
+
+State 41
+
+   32 statement: block •
+
+    $default  reduce using rule 32 (statement)
+
+
+State 42
+
+   21 statements: statements statement •
+
+    $default  reduce using rule 21 (statements)
+
+
+State 43
+
+   23 statement: assignment • ';'
+
+    ';'  shift, and go to state 64
+
+
+State 44
+
+   24 statement: if_statement •
+
+    $default  reduce using rule 24 (statement)
+
+
+State 45
+
+   25 statement: while_statement •
+
+    $default  reduce using rule 25 (statement)
+
+
+State 46
+
+   26 statement: repeat_until_statement •
+
+    $default  reduce using rule 26 (statement)
+
+
+State 47
+
+   27 statement: for_statement •
+
+    $default  reduce using rule 27 (statement)
+
+
+State 48
+
+   28 statement: switch_statement •
+
+    $default  reduce using rule 28 (statement)
+
+
+State 49
+
+   29 statement: return_statement • ';'
+
+    ';'  shift, and go to state 65
+
+
+State 50
+
+   19 decl_list: decl_list ',' • IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 66
+
+
+State 51
+
+   18 declaration: type decl_list ';' •
+
+    $default  reduce using rule 18 (declaration)
+
+
+State 52
+
+   33 assignment: IDENTIFIER '=' • expression
+
+    NUMBER      shift, and go to state 60
+    IDENTIFIER  shift, and go to state 61
+    '('         shift, and go to state 62
+
+    expression  go to state 67
+
+
+State 53
+
+   34 if_statement: IF '(' • expression ')' THEN statement ELSE statement
+
+    NUMBER      shift, and go to state 60
+    IDENTIFIER  shift, and go to state 61
+    '('         shift, and go to state 62
+
+    expression  go to state 68
+
+
+State 54
+
+   35 while_statement: WHILE '(' • expression ')' statement
+
+    NUMBER      shift, and go to state 60
+    IDENTIFIER  shift, and go to state 61
+    '('         shift, and go to state 62
+
+    expression  go to state 69
+
+
+State 55
+
+   21 statements: statements • statement
+   36 repeat_until_statement: REPEAT statements • UNTIL '(' expression ')' ';'
+
+    IDENTIFIER  shift, and go to state 31
+    IF          shift, and go to state 32
+    WHILE       shift, and go to state 33
+    REPEAT      shift, and go to state 34
+    UNTIL       shift, and go to state 70
+    FOR         shift, and go to state 35
+    SWITCH      shift, and go to state 36
+    BREAK       shift, and go to state 37
+    CONTINUE    shift, and go to state 38
+    RETURN      shift, and go to state 39
+    '{'         shift, and go to state 22
+
+    block                   go to state 41
+    statement               go to state 42
+    assignment              go to state 43
+    if_statement            go to state 44
+    while_statement         go to state 45
+    repeat_until_statement  go to state 46
+    for_statement           go to state 47
+    switch_statement        go to state 48
+    return_statement        go to state 49
+
+
+State 56
+
+   37 for_statement: FOR '(' • assignment ';' expression ';' assignment ')' statement
+
+    IDENTIFIER  shift, and go to state 31
+
+    assignment  go to state 71
+
+
+State 57
+
+   38 switch_statement: SWITCH '(' • expression ')' '{' case_list '}'
+
+    NUMBER      shift, and go to state 60
+    IDENTIFIER  shift, and go to state 61
+    '('         shift, and go to state 62
+
+    expression  go to state 72
+
+
+State 58
+
+   30 statement: BREAK ';' •
+
+    $default  reduce using rule 30 (statement)
+
+
+State 59
+
+   31 statement: CONTINUE ';' •
+
+    $default  reduce using rule 31 (statement)
+
+
+State 60
+
+   58 expression: NUMBER •
+
+    $default  reduce using rule 58 (expression)
+
+
+State 61
+
+   57 expression: IDENTIFIER •
+
+    $default  reduce using rule 57 (expression)
+
+
+State 62
+
+   56 expression: '(' • expression ')'
+
+    NUMBER      shift, and go to state 60
+    IDENTIFIER  shift, and go to state 61
+    '('         shift, and go to state 62
+
+    expression  go to state 73
+
+
+State 63
+
+   44 return_statement: RETURN expression •
+   45 expression: expression • PLUS expression
+   46           | expression • MINUS expression
+   47           | expression • MULT expression
+   48           | expression • DIV expression
+   49           | expression • MOD expression
+   50           | expression • EQ expression
+   51           | expression • NEQ expression
+   52           | expression • '<' expression
+   53           | expression • '>' expression
+   54           | expression • LE expression
+   55           | expression • GE expression
+
+    EQ     shift, and go to state 74
+    NEQ    shift, and go to state 75
+    LE     shift, and go to state 76
+    GE     shift, and go to state 77
+    PLUS   shift, and go to state 78
+    MINUS  shift, and go to state 79
+    MULT   shift, and go to state 80
+    DIV    shift, and go to state 81
+    MOD    shift, and go to state 82
+    '<'    shift, and go to state 83
+    '>'    shift, and go to state 84
+
+    $default  reduce using rule 44 (return_statement)
+
+
+State 64
+
+   23 statement: assignment ';' •
+
+    $default  reduce using rule 23 (statement)
+
+
+State 65
+
+   29 statement: return_statement ';' •
+
+    $default  reduce using rule 29 (statement)
+
+
+State 66
+
+   19 decl_list: decl_list ',' IDENTIFIER •
+
+    $default  reduce using rule 19 (decl_list)
+
+
+State 67
+
+   33 assignment: IDENTIFIER '=' expression •
+   45 expression: expression • PLUS expression
+   46           | expression • MINUS expression
+   47           | expression • MULT expression
+   48           | expression • DIV expression
+   49           | expression • MOD expression
+   50           | expression • EQ expression
+   51           | expression • NEQ expression
+   52           | expression • '<' expression
+   53           | expression • '>' expression
+   54           | expression • LE expression
+   55           | expression • GE expression
+
+    EQ     shift, and go to state 74
+    NEQ    shift, and go to state 75
+    LE     shift, and go to state 76
+    GE     shift, and go to state 77
+    PLUS   shift, and go to state 78
+    MINUS  shift, and go to state 79
+    MULT   shift, and go to state 80
+    DIV    shift, and go to state 81
+    MOD    shift, and go to state 82
+    '<'    shift, and go to state 83
+    '>'    shift, and go to state 84
+
+    $default  reduce using rule 33 (assignment)
+
+
+State 68
+
+   34 if_statement: IF '(' expression • ')' THEN statement ELSE statement
+   45 expression: expression • PLUS expression
+   46           | expression • MINUS expression
+   47           | expression • MULT expression
+   48           | expression • DIV expression
+   49           | expression • MOD expression
+   50           | expression • EQ expression
+   51           | expression • NEQ expression
+   52           | expression • '<' expression
+   53           | expression • '>' expression
+   54           | expression • LE expression
+   55           | expression • GE expression
+
+    EQ     shift, and go to state 74
+    NEQ    shift, and go to state 75
+    LE     shift, and go to state 76
+    GE     shift, and go to state 77
+    PLUS   shift, and go to state 78
+    MINUS  shift, and go to state 79
+    MULT   shift, and go to state 80
+    DIV    shift, and go to state 81
+    MOD    shift, and go to state 82
+    '<'    shift, and go to state 83
+    '>'    shift, and go to state 84
+    ')'    shift, and go to state 85
+
+
+State 69
+
+   35 while_statement: WHILE '(' expression • ')' statement
+   45 expression: expression • PLUS expression
+   46           | expression • MINUS expression
+   47           | expression • MULT expression
+   48           | expression • DIV expression
+   49           | expression • MOD expression
+   50           | expression • EQ expression
+   51           | expression • NEQ expression
+   52           | expression • '<' expression
+   53           | expression • '>' expression
+   54           | expression • LE expression
+   55           | expression • GE expression
+
+    EQ     shift, and go to state 74
+    NEQ    shift, and go to state 75
+    LE     shift, and go to state 76
+    GE     shift, and go to state 77
+    PLUS   shift, and go to state 78
+    MINUS  shift, and go to state 79
+    MULT   shift, and go to state 80
+    DIV    shift, and go to state 81
+    MOD    shift, and go to state 82
+    '<'    shift, and go to state 83
+    '>'    shift, and go to state 84
+    ')'    shift, and go to state 86
+
+
+State 70
+
+   36 repeat_until_statement: REPEAT statements UNTIL • '(' expression ')' ';'
+
+    '('  shift, and go to state 87
+
+
+State 71
+
+   37 for_statement: FOR '(' assignment • ';' expression ';' assignment ')' statement
+
+    ';'  shift, and go to state 88
+
+
+State 72
+
+   38 switch_statement: SWITCH '(' expression • ')' '{' case_list '}'
+   45 expression: expression • PLUS expression
+   46           | expression • MINUS expression
+   47           | expression • MULT expression
+   48           | expression • DIV expression
+   49           | expression • MOD expression
+   50           | expression • EQ expression
+   51           | expression • NEQ expression
+   52           | expression • '<' expression
+   53           | expression • '>' expression
+   54           | expression • LE expression
+   55           | expression • GE expression
+
+    EQ     shift, and go to state 74
+    NEQ    shift, and go to state 75
+    LE     shift, and go to state 76
+    GE     shift, and go to state 77
+    PLUS   shift, and go to state 78
+    MINUS  shift, and go to state 79
+    MULT   shift, and go to state 80
+    DIV    shift, and go to state 81
+    MOD    shift, and go to state 82
+    '<'    shift, and go to state 83
+    '>'    shift, and go to state 84
+    ')'    shift, and go to state 89
+
+
+State 73
+
+   45 expression: expression • PLUS expression
+   46           | expression • MINUS expression
+   47           | expression • MULT expression
+   48           | expression • DIV expression
+   49           | expression • MOD expression
+   50           | expression • EQ expression
+   51           | expression • NEQ expression
+   52           | expression • '<' expression
+   53           | expression • '>' expression
+   54           | expression • LE expression
+   55           | expression • GE expression
+   56           | '(' expression • ')'
+
+    EQ     shift, and go to state 74
+    NEQ    shift, and go to state 75
+    LE     shift, and go to state 76
+    GE     shift, and go to state 77
+    PLUS   shift, and go to state 78
+    MINUS  shift, and go to state 79
+    MULT   shift, and go to state 80
+    DIV    shift, and go to state 81
+    MOD    shift, and go to state 82
+    '<'    shift, and go to state 83
+    '>'    shift, and go to state 84
+    ')'    shift, and go to state 90
+
+
+State 74
+
+   50 expression: expression EQ • expression
+
+    NUMBER      shift, and go to state 60
+    IDENTIFIER  shift, and go to state 61
+    '('         shift, and go to state 62
+
+    expression  go to state 91
+
+
+State 75
+
+   51 expression: expression NEQ • expression
+
+    NUMBER      shift, and go to state 60
+    IDENTIFIER  shift, and go to state 61
+    '('         shift, and go to state 62
+
+    expression  go to state 92
+
+
+State 76
+
+   54 expression: expression LE • expression
+
+    NUMBER      shift, and go to state 60
+    IDENTIFIER  shift, and go to state 61
+    '('         shift, and go to state 62
+
+    expression  go to state 93
+
+
+State 77
+
+   55 expression: expression GE • expression
+
+    NUMBER      shift, and go to state 60
+    IDENTIFIER  shift, and go to state 61
+    '('         shift, and go to state 62
+
+    expression  go to state 94
+
+
+State 78
+
+   45 expression: expression PLUS • expression
+
+    NUMBER      shift, and go to state 60
+    IDENTIFIER  shift, and go to state 61
+    '('         shift, and go to state 62
+
+    expression  go to state 95
+
+
+State 79
+
+   46 expression: expression MINUS • expression
+
+    NUMBER      shift, and go to state 60
+    IDENTIFIER  shift, and go to state 61
+    '('         shift, and go to state 62
+
+    expression  go to state 96
+
+
+State 80
+
+   47 expression: expression MULT • expression
+
+    NUMBER      shift, and go to state 60
+    IDENTIFIER  shift, and go to state 61
+    '('         shift, and go to state 62
+
+    expression  go to state 97
+
+
+State 81
+
+   48 expression: expression DIV • expression
+
+    NUMBER      shift, and go to state 60
+    IDENTIFIER  shift, and go to state 61
+    '('         shift, and go to state 62
+
+    expression  go to state 98
+
+
+State 82
+
+   49 expression: expression MOD • expression
+
+    NUMBER      shift, and go to state 60
+    IDENTIFIER  shift, and go to state 61
+    '('         shift, and go to state 62
+
+    expression  go to state 99
+
+
+State 83
+
+   52 expression: expression '<' • expression
+
+    NUMBER      shift, and go to state 60
+    IDENTIFIER  shift, and go to state 61
+    '('         shift, and go to state 62
+
+    expression  go to state 100
+
+
+State 84
+
+   53 expression: expression '>' • expression
+
+    NUMBER      shift, and go to state 60
+    IDENTIFIER  shift, and go to state 61
+    '('         shift, and go to state 62
+
+    expression  go to state 101
+
+
+State 85
+
+   34 if_statement: IF '(' expression ')' • THEN statement ELSE statement
+
+    THEN  shift, and go to state 102
+
+
+State 86
+
+   35 while_statement: WHILE '(' expression ')' • statement
+
+    IDENTIFIER  shift, and go to state 31
+    IF          shift, and go to state 32
+    WHILE       shift, and go to state 33
+    REPEAT      shift, and go to state 34
+    FOR         shift, and go to state 35
+    SWITCH      shift, and go to state 36
+    BREAK       shift, and go to state 37
+    CONTINUE    shift, and go to state 38
+    RETURN      shift, and go to state 39
+    '{'         shift, and go to state 22
+
+    block                   go to state 41
+    statement               go to state 103
+    assignment              go to state 43
+    if_statement            go to state 44
+    while_statement         go to state 45
+    repeat_until_statement  go to state 46
+    for_statement           go to state 47
+    switch_statement        go to state 48
+    return_statement        go to state 49
+
+
+State 87
+
+   36 repeat_until_statement: REPEAT statements UNTIL '(' • expression ')' ';'
+
+    NUMBER      shift, and go to state 60
+    IDENTIFIER  shift, and go to state 61
+    '('         shift, and go to state 62
+
+    expression  go to state 104
+
+
+State 88
+
+   37 for_statement: FOR '(' assignment ';' • expression ';' assignment ')' statement
+
+    NUMBER      shift, and go to state 60
+    IDENTIFIER  shift, and go to state 61
+    '('         shift, and go to state 62
+
+    expression  go to state 105
+
+
+State 89
+
+   38 switch_statement: SWITCH '(' expression ')' • '{' case_list '}'
+
+    '{'  shift, and go to state 106
+
+
+State 90
+
+   56 expression: '(' expression ')' •
+
+    $default  reduce using rule 56 (expression)
+
+
+State 91
+
+   45 expression: expression • PLUS expression
+   46           | expression • MINUS expression
+   47           | expression • MULT expression
+   48           | expression • DIV expression
+   49           | expression • MOD expression
+   50           | expression • EQ expression
+   50           | expression EQ expression •
+   51           | expression • NEQ expression
+   52           | expression • '<' expression
+   53           | expression • '>' expression
+   54           | expression • LE expression
+   55           | expression • GE expression
+
+    EQ   error (nonassociative)
+    NEQ  error (nonassociative)
+    LE   error (nonassociative)
+    GE   error (nonassociative)
+    '<'  error (nonassociative)
+    '>'  error (nonassociative)
+
+    $default  reduce using rule 50 (expression)
+
+
+State 92
+
+   45 expression: expression • PLUS expression
+   46           | expression • MINUS expression
+   47           | expression • MULT expression
+   48           | expression • DIV expression
+   49           | expression • MOD expression
+   50           | expression • EQ expression
+   51           | expression • NEQ expression
+   51           | expression NEQ expression •
+   52           | expression • '<' expression
+   53           | expression • '>' expression
+   54           | expression • LE expression
+   55           | expression • GE expression
+
+    EQ   error (nonassociative)
+    NEQ  error (nonassociative)
+    LE   error (nonassociative)
+    GE   error (nonassociative)
+    '<'  error (nonassociative)
+    '>'  error (nonassociative)
+
+    $default  reduce using rule 51 (expression)
+
+
+State 93
+
+   45 expression: expression • PLUS expression
+   46           | expression • MINUS expression
+   47           | expression • MULT expression
+   48           | expression • DIV expression
+   49           | expression • MOD expression
+   50           | expression • EQ expression
+   51           | expression • NEQ expression
+   52           | expression • '<' expression
+   53           | expression • '>' expression
+   54           | expression • LE expression
+   54           | expression LE expression •
+   55           | expression • GE expression
+
+    EQ   error (nonassociative)
+    NEQ  error (nonassociative)
+    LE   error (nonassociative)
+    GE   error (nonassociative)
+    '<'  error (nonassociative)
+    '>'  error (nonassociative)
+
+    $default  reduce using rule 54 (expression)
+
+
+State 94
+
+   45 expression: expression • PLUS expression
+   46           | expression • MINUS expression
+   47           | expression • MULT expression
+   48           | expression • DIV expression
+   49           | expression • MOD expression
+   50           | expression • EQ expression
+   51           | expression • NEQ expression
+   52           | expression • '<' expression
+   53           | expression • '>' expression
+   54           | expression • LE expression
+   55           | expression • GE expression
+   55           | expression GE expression •
+
+    EQ   error (nonassociative)
+    NEQ  error (nonassociative)
+    LE   error (nonassociative)
+    GE   error (nonassociative)
+    '<'  error (nonassociative)
+    '>'  error (nonassociative)
+
+    $default  reduce using rule 55 (expression)
+
+
+State 95
+
+   45 expression: expression • PLUS expression
+   45           | expression PLUS expression •
+   46           | expression • MINUS expression
+   47           | expression • MULT expression
+   48           | expression • DIV expression
+   49           | expression • MOD expression
+   50           | expression • EQ expression
+   51           | expression • NEQ expression
+   52           | expression • '<' expression
+   53           | expression • '>' expression
+   54           | expression • LE expression
+   55           | expression • GE expression
+
+    EQ    shift, and go to state 74
+    NEQ   shift, and go to state 75
+    LE    shift, and go to state 76
+    GE    shift, and go to state 77
+    MULT  shift, and go to state 80
+    DIV   shift, and go to state 81
+    MOD   shift, and go to state 82
+    '<'   shift, and go to state 83
+    '>'   shift, and go to state 84
+
+    $default  reduce using rule 45 (expression)
+
+
+State 96
+
+   45 expression: expression • PLUS expression
+   46           | expression • MINUS expression
+   46           | expression MINUS expression •
+   47           | expression • MULT expression
+   48           | expression • DIV expression
+   49           | expression • MOD expression
+   50           | expression • EQ expression
+   51           | expression • NEQ expression
+   52           | expression • '<' expression
+   53           | expression • '>' expression
+   54           | expression • LE expression
+   55           | expression • GE expression
+
+    EQ    shift, and go to state 74
+    NEQ   shift, and go to state 75
+    LE    shift, and go to state 76
+    GE    shift, and go to state 77
+    MULT  shift, and go to state 80
+    DIV   shift, and go to state 81
+    MOD   shift, and go to state 82
+    '<'   shift, and go to state 83
+    '>'   shift, and go to state 84
+
+    $default  reduce using rule 46 (expression)
+
+
+State 97
+
+   45 expression: expression • PLUS expression
+   46           | expression • MINUS expression
+   47           | expression • MULT expression
+   47           | expression MULT expression •
+   48           | expression • DIV expression
+   49           | expression • MOD expression
+   50           | expression • EQ expression
+   51           | expression • NEQ expression
+   52           | expression • '<' expression
+   53           | expression • '>' expression
+   54           | expression • LE expression
+   55           | expression • GE expression
+
+    EQ   shift, and go to state 74
+    NEQ  shift, and go to state 75
+    LE   shift, and go to state 76
+    GE   shift, and go to state 77
+    '<'  shift, and go to state 83
+    '>'  shift, and go to state 84
+
+    $default  reduce using rule 47 (expression)
+
+
+State 98
+
+   45 expression: expression • PLUS expression
+   46           | expression • MINUS expression
+   47           | expression • MULT expression
+   48           | expression • DIV expression
+   48           | expression DIV expression •
+   49           | expression • MOD expression
+   50           | expression • EQ expression
+   51           | expression • NEQ expression
+   52           | expression • '<' expression
+   53           | expression • '>' expression
+   54           | expression • LE expression
+   55           | expression • GE expression
+
+    EQ   shift, and go to state 74
+    NEQ  shift, and go to state 75
+    LE   shift, and go to state 76
+    GE   shift, and go to state 77
+    '<'  shift, and go to state 83
+    '>'  shift, and go to state 84
+
+    $default  reduce using rule 48 (expression)
+
+
+State 99
+
+   45 expression: expression • PLUS expression
+   46           | expression • MINUS expression
+   47           | expression • MULT expression
+   48           | expression • DIV expression
+   49           | expression • MOD expression
+   49           | expression MOD expression •
+   50           | expression • EQ expression
+   51           | expression • NEQ expression
+   52           | expression • '<' expression
+   53           | expression • '>' expression
+   54           | expression • LE expression
+   55           | expression • GE expression
+
+    EQ   shift, and go to state 74
+    NEQ  shift, and go to state 75
+    LE   shift, and go to state 76
+    GE   shift, and go to state 77
+    '<'  shift, and go to state 83
+    '>'  shift, and go to state 84
+
+    $default  reduce using rule 49 (expression)
+
+
+State 100
+
+   45 expression: expression • PLUS expression
+   46           | expression • MINUS expression
+   47           | expression • MULT expression
+   48           | expression • DIV expression
+   49           | expression • MOD expression
+   50           | expression • EQ expression
+   51           | expression • NEQ expression
+   52           | expression • '<' expression
+   52           | expression '<' expression •
+   53           | expression • '>' expression
+   54           | expression • LE expression
+   55           | expression • GE expression
+
+    EQ   error (nonassociative)
+    NEQ  error (nonassociative)
+    LE   error (nonassociative)
+    GE   error (nonassociative)
+    '<'  error (nonassociative)
+    '>'  error (nonassociative)
+
+    $default  reduce using rule 52 (expression)
+
+
+State 101
+
+   45 expression: expression • PLUS expression
+   46           | expression • MINUS expression
+   47           | expression • MULT expression
+   48           | expression • DIV expression
+   49           | expression • MOD expression
+   50           | expression • EQ expression
+   51           | expression • NEQ expression
+   52           | expression • '<' expression
+   53           | expression • '>' expression
+   53           | expression '>' expression •
+   54           | expression • LE expression
+   55           | expression • GE expression
+
+    EQ   error (nonassociative)
+    NEQ  error (nonassociative)
+    LE   error (nonassociative)
+    GE   error (nonassociative)
+    '<'  error (nonassociative)
+    '>'  error (nonassociative)
+
+    $default  reduce using rule 53 (expression)
+
+
+State 102
+
+   34 if_statement: IF '(' expression ')' THEN • statement ELSE statement
+
+    IDENTIFIER  shift, and go to state 31
+    IF          shift, and go to state 32
+    WHILE       shift, and go to state 33
+    REPEAT      shift, and go to state 34
+    FOR         shift, and go to state 35
+    SWITCH      shift, and go to state 36
+    BREAK       shift, and go to state 37
+    CONTINUE    shift, and go to state 38
+    RETURN      shift, and go to state 39
+    '{'         shift, and go to state 22
+
+    block                   go to state 41
+    statement               go to state 107
+    assignment              go to state 43
+    if_statement            go to state 44
+    while_statement         go to state 45
+    repeat_until_statement  go to state 46
+    for_statement           go to state 47
+    switch_statement        go to state 48
+    return_statement        go to state 49
+
+
+State 103
+
+   35 while_statement: WHILE '(' expression ')' statement •
+
+    $default  reduce using rule 35 (while_statement)
+
+
+State 104
+
+   36 repeat_until_statement: REPEAT statements UNTIL '(' expression • ')' ';'
+   45 expression: expression • PLUS expression
+   46           | expression • MINUS expression
+   47           | expression • MULT expression
+   48           | expression • DIV expression
+   49           | expression • MOD expression
+   50           | expression • EQ expression
+   51           | expression • NEQ expression
+   52           | expression • '<' expression
+   53           | expression • '>' expression
+   54           | expression • LE expression
+   55           | expression • GE expression
+
+    EQ     shift, and go to state 74
+    NEQ    shift, and go to state 75
+    LE     shift, and go to state 76
+    GE     shift, and go to state 77
+    PLUS   shift, and go to state 78
+    MINUS  shift, and go to state 79
+    MULT   shift, and go to state 80
+    DIV    shift, and go to state 81
+    MOD    shift, and go to state 82
+    '<'    shift, and go to state 83
+    '>'    shift, and go to state 84
+    ')'    shift, and go to state 108
+
+
+State 105
+
+   37 for_statement: FOR '(' assignment ';' expression • ';' assignment ')' statement
+   45 expression: expression • PLUS expression
+   46           | expression • MINUS expression
+   47           | expression • MULT expression
+   48           | expression • DIV expression
+   49           | expression • MOD expression
+   50           | expression • EQ expression
+   51           | expression • NEQ expression
+   52           | expression • '<' expression
+   53           | expression • '>' expression
+   54           | expression • LE expression
+   55           | expression • GE expression
+
+    EQ     shift, and go to state 74
+    NEQ    shift, and go to state 75
+    LE     shift, and go to state 76
+    GE     shift, and go to state 77
+    PLUS   shift, and go to state 78
+    MINUS  shift, and go to state 79
+    MULT   shift, and go to state 80
+    DIV    shift, and go to state 81
+    MOD    shift, and go to state 82
+    '<'    shift, and go to state 83
+    '>'    shift, and go to state 84
+    ';'    shift, and go to state 109
+
+
+State 106
+
+   38 switch_statement: SWITCH '(' expression ')' '{' • case_list '}'
+
+    $default  reduce using rule 41 (case_list)
+
+    case_list  go to state 110
+
+
+State 107
+
+   34 if_statement: IF '(' expression ')' THEN statement • ELSE statement
+
+    ELSE  shift, and go to state 111
+
+
+State 108
+
+   36 repeat_until_statement: REPEAT statements UNTIL '(' expression ')' • ';'
+
+    ';'  shift, and go to state 112
+
+
+State 109
+
+   37 for_statement: FOR '(' assignment ';' expression ';' • assignment ')' statement
+
+    IDENTIFIER  shift, and go to state 31
+
+    assignment  go to state 113
+
+
+State 110
+
+   38 switch_statement: SWITCH '(' expression ')' '{' case_list • '}'
+   39 case_list: case_list • CASE constant ':' statements
+   40          | case_list • DEFAULT ':' statements
+
+    CASE     shift, and go to state 114
+    DEFAULT  shift, and go to state 115
+    '}'      shift, and go to state 116
+
+
+State 111
+
+   34 if_statement: IF '(' expression ')' THEN statement ELSE • statement
+
+    IDENTIFIER  shift, and go to state 31
+    IF          shift, and go to state 32
+    WHILE       shift, and go to state 33
+    REPEAT      shift, and go to state 34
+    FOR         shift, and go to state 35
+    SWITCH      shift, and go to state 36
+    BREAK       shift, and go to state 37
+    CONTINUE    shift, and go to state 38
+    RETURN      shift, and go to state 39
+    '{'         shift, and go to state 22
+
+    block                   go to state 41
+    statement               go to state 117
+    assignment              go to state 43
+    if_statement            go to state 44
+    while_statement         go to state 45
+    repeat_until_statement  go to state 46
+    for_statement           go to state 47
+    switch_statement        go to state 48
+    return_statement        go to state 49
+
+
+State 112
+
+   36 repeat_until_statement: REPEAT statements UNTIL '(' expression ')' ';' •
+
+    $default  reduce using rule 36 (repeat_until_statement)
+
+
+State 113
+
+   37 for_statement: FOR '(' assignment ';' expression ';' assignment • ')' statement
+
+    ')'  shift, and go to state 118
+
+
+State 114
+
+   39 case_list: case_list CASE • constant ':' statements
+
+    NUMBER      shift, and go to state 119
+    IDENTIFIER  shift, and go to state 120
+
+    constant  go to state 121
+
+
+State 115
+
+   40 case_list: case_list DEFAULT • ':' statements
+
+    ':'  shift, and go to state 122
+
+
+State 116
+
+   38 switch_statement: SWITCH '(' expression ')' '{' case_list '}' •
+
+    $default  reduce using rule 38 (switch_statement)
+
+
+State 117
+
+   34 if_statement: IF '(' expression ')' THEN statement ELSE statement •
+
+    $default  reduce using rule 34 (if_statement)
+
+
+State 118
+
+   37 for_statement: FOR '(' assignment ';' expression ';' assignment ')' • statement
+
+    IDENTIFIER  shift, and go to state 31
+    IF          shift, and go to state 32
+    WHILE       shift, and go to state 33
+    REPEAT      shift, and go to state 34
+    FOR         shift, and go to state 35
+    SWITCH      shift, and go to state 36
+    BREAK       shift, and go to state 37
+    CONTINUE    shift, and go to state 38
+    RETURN      shift, and go to state 39
+    '{'         shift, and go to state 22
+
+    block                   go to state 41
+    statement               go to state 123
+    assignment              go to state 43
+    if_statement            go to state 44
+    while_statement         go to state 45
+    repeat_until_statement  go to state 46
+    for_statement           go to state 47
+    switch_statement        go to state 48
+    return_statement        go to state 49
+
+
+State 119
+
+   42 constant: NUMBER •
+
+    $default  reduce using rule 42 (constant)
+
+
+State 120
+
+   43 constant: IDENTIFIER •
+
+    $default  reduce using rule 43 (constant)
+
+
+State 121
+
+   39 case_list: case_list CASE constant • ':' statements
+
+    ':'  shift, and go to state 124
+
+
+State 122
+
+   40 case_list: case_list DEFAULT ':' • statements
+
+    $default  reduce using rule 22 (statements)
+
+    statements  go to state 125
+
+
+State 123
+
+   37 for_statement: FOR '(' assignment ';' expression ';' assignment ')' statement •
+
+    $default  reduce using rule 37 (for_statement)
+
+
+State 124
+
+   39 case_list: case_list CASE constant ':' • statements
+
+    $default  reduce using rule 22 (statements)
+
+    statements  go to state 126
+
+
+State 125
+
+   21 statements: statements • statement
+   40 case_list: case_list DEFAULT ':' statements •
+
+    IDENTIFIER  shift, and go to state 31
+    IF          shift, and go to state 32
+    WHILE       shift, and go to state 33
+    REPEAT      shift, and go to state 34
+    FOR         shift, and go to state 35
+    SWITCH      shift, and go to state 36
+    BREAK       shift, and go to state 37
+    CONTINUE    shift, and go to state 38
+    RETURN      shift, and go to state 39
+    '{'         shift, and go to state 22
+
+    $default  reduce using rule 40 (case_list)
+
+    block                   go to state 41
+    statement               go to state 42
+    assignment              go to state 43
+    if_statement            go to state 44
+    while_statement         go to state 45
+    repeat_until_statement  go to state 46
+    for_statement           go to state 47
+    switch_statement        go to state 48
+    return_statement        go to state 49
+
+
+State 126
+
+   21 statements: statements • statement
+   39 case_list: case_list CASE constant ':' statements •
+
+    IDENTIFIER  shift, and go to state 31
+    IF          shift, and go to state 32
+    WHILE       shift, and go to state 33
+    REPEAT      shift, and go to state 34
+    FOR         shift, and go to state 35
+    SWITCH      shift, and go to state 36
+    BREAK       shift, and go to state 37
+    CONTINUE    shift, and go to state 38
+    RETURN      shift, and go to state 39
+    '{'         shift, and go to state 22
+
+    $default  reduce using rule 39 (case_list)
+
+    block                   go to state 41
+    statement               go to state 42
+    assignment              go to state 43
+    if_statement            go to state 44
+    while_statement         go to state 45
+    repeat_until_statement  go to state 46
+    for_statement           go to state 47
+    switch_statement        go to state 48
+    return_statement        go to state 49
