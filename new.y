@@ -1,4 +1,4 @@
-%{
+revisit all semicolons and define them were rules resolves to terminals %{
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -20,7 +20,7 @@ extern FILE *yyin;
 %token IF THEN ELSE WHILE REPEAT UNTIL FOR SWITCH CASE DEFAULT BREAK CONTINUE RETURN
 %token INT FLOAT CHAR VOID CONST
 %token EQ NEQ LE GE
-%token PLUS MINUS MULT DIV MOD INC DEC AND OR NOT BITWISE_AND BITWISE_NOT BITWISE_OR
+%token PLUS MINUS MULT DIV MOD INC DEC
 %token ';' ',' '(' ')' '{' '}' '=' '<' '>' ':'
 
 %left PLUS MINUS
@@ -72,22 +72,26 @@ type
     ;
 
 block
-    : '{' block_content '}'
+    : '{' block_content'}'
+      
     ;
-
 block_content
-    : block_content declaration
-    | block_content statement 
-    |/* empty */
+    : block_content declarations
+    | block_content statements
+    | /* empty */
     ;
 
 func_block
     : '{' block_content return_statement '}'
+    ;    
+
+declarations
+    : declarations declaration
+    | /* empty */
     ;
 
 declaration
-    : type decl_list ';'
-    | type decl_list '=' expression ';'
+    : type decl_list ';'| type decl_list '=' expression ';'
     ;
 
 decl_list
@@ -101,41 +105,25 @@ statements
     ;
 
 statement
-    : assignment
+    : assignment ';'
     | if_statement
     | while_statement
     | repeat_until_statement
     | for_statement
     | switch_statement
-    | return_statement
-    | break_statement
-    | continue_statement
-    | func_call
-    | inc_dec
+    | return_statement ';'
+    | BREAK ';'
+    | CONTINUE ';'
+    | IDENTIFIER '('')' ';'
+    | IDENTIFIER INC ';'
+    | IDENTIFIER DEC ';'
+    | INC IDENTIFIER ';'
+    | DEC IDENTIFIER ';'
     | block
     ;
 
 assignment
-    : IDENTIFIER '=' expression ';'
-    ;
-
-break_statement
-    : BREAK ';'
-    ;
-
-continue_statement
-    : CONTINUE ';'
-    ;
-
-func_call
-    : IDENTIFIER '(' ')' ';'
-    ;
-
-inc_dec
-    : IDENTIFIER INC ';'
-    | IDENTIFIER DEC ';'
-    | INC IDENTIFIER ';'
-    | DEC IDENTIFIER ';'
+    : IDENTIFIER '=' expression
     ;
 
 if_statement
@@ -151,7 +139,7 @@ repeat_until_statement
     ;
 
 for_statement
-    : FOR '(' assignment expression ';' assignment ')' statement
+    : FOR '(' assignment ';' expression ';' assignment ')' statement
     ;
 
 switch_statement
@@ -170,8 +158,7 @@ constant
     ;
 
 return_statement
-    : RETURN expression ';'
-    | RETURN ';'
+    : RETURN expression | RETURN
     ;
 
 expression
@@ -182,12 +169,6 @@ expression
     | expression MOD expression
     | expression EQ expression
     | expression NEQ expression
-    | expression AND expression
-    | expression OR expression
-    | NOT expression
-    | expression BITWISE_AND expression
-    | expression BITWISE_OR expression
-    | BITWISE_NOT expression
     | expression '<' expression
     | expression '>' expression
     | expression LE expression

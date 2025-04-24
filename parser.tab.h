@@ -82,7 +82,15 @@ extern int yydebug;
     MINUS = 283,                   /* MINUS  */
     MULT = 284,                    /* MULT  */
     DIV = 285,                     /* DIV  */
-    MOD = 286                      /* MOD  */
+    MOD = 286,                     /* MOD  */
+    INC = 287,                     /* INC  */
+    DEC = 288,                     /* DEC  */
+    AND = 289,                     /* AND  */
+    OR = 290,                      /* OR  */
+    NOT = 291,                     /* NOT  */
+    BITWISE_AND = 292,             /* BITWISE_AND  */
+    BITWISE_NOT = 293,             /* BITWISE_NOT  */
+    BITWISE_OR = 294               /* BITWISE_OR  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -96,7 +104,7 @@ union YYSTYPE
     int num;
     char *id;
 
-#line 100 "parser.tab.h"
+#line 108 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

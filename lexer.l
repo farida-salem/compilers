@@ -49,6 +49,16 @@ ID          {LETTER}({LETTER}|{DIGIT})*
 "*"               { printf("Operator MULT: %s\n", yytext); return MULT; }
 "/"               { printf("Operator DIV: %s\n", yytext); return DIV; }
 "%"               { printf("Operator MOD: %s\n", yytext); return MOD; }
+"++"              { printf("Operator INC: %s\n", yytext); return INC; }
+"--"              { printf("Operator DEC: %s\n", yytext); return DEC; }
+"&&"              { printf("Operator AND: %s\n", yytext); return AND; }
+"||"              { printf("Operator OR: %s\n", yytext); return OR; }
+"!"               { printf("Operator NOT: %s\n", yytext); return NOT; }
+"~"               { printf("Operator BITWISE NOT: %s\n", yytext); return BITWISE_NOT; }
+"&"               { printf("Operator BITWISE AND: %s\n", yytext); return BITWISE_AND; }
+"|"               { printf("Operator BITWISE OR: %s\n", yytext); return BITWISE_OR; }
+
+
 
 ";"               { printf("Semicolon ;\n"); return ';'; }
 ","               { printf("Comma ,\n"); return ','; }
