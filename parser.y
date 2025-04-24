@@ -39,8 +39,8 @@ functions
     ;
 
 function
-    : type IDENTIFIER '(' params ')' block
-    |
+    : func_types IDENTIFIER '(' params ')' func_block
+    | VOID IDENTIFIER '(' params ')' block
     ;
 
 params
@@ -57,7 +57,12 @@ param
     : type IDENTIFIER
     ;
 
-
+func_types
+    : INT
+    | FLOAT
+    | CHAR
+    | CONST func_types
+    ;
 
 type
     : INT
@@ -70,6 +75,10 @@ type
 block
     : '{' declarations statements '}'
     ;
+
+func_block
+    : '{' declarations statements  return_statement ';' '}'
+    ;    
 
 declarations
     : declarations declaration
