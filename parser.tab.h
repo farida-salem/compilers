@@ -44,6 +44,32 @@
 #if YYDEBUG
 extern int yydebug;
 #endif
+/* "%code requires" blocks.  */
+#line 23 "parser.y"
+
+  #include "symbol_table.h"
+
+  /* IdList for decl_list: */
+  typedef struct IdList {
+      char       *name;
+      struct IdList *next;
+  } IdList;
+
+  /* Helpers to build a list of identifiers: */
+  static IdList* new_idlist(char *n) {
+      IdList *l = malloc(sizeof *l);
+      l->name = strdup(n);
+      l->next = NULL;
+      return l;
+  }
+  static IdList* idlist_append(IdList *l, char *n) {
+      IdList *it = l;
+      while (it->next) it = it->next;
+      it->next = new_idlist(n);
+      return l;
+  }
+
+#line 73 "parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -99,12 +125,16 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 12 "parser.y"
+#line 48 "parser.y"
 
-    int num;
-    char *id;
+    int         num;
+    char       *id;
+    Type        type;           /* for expressions and constants */
+    TypeImmut   immutability;   /* for types and function returns */
+    Param       param;          /* for single parameter */
+    IdList     *idlist;         /* for decl_list */
 
-#line 108 "parser.tab.h"
+#line 138 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

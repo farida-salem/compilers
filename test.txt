@@ -1,17 +1,58 @@
-int main(){
-    int x=3;
-    x=5;
-    int z=5;
-    int e=7;
-    x=5;
-    int c=10;
-    //int f;
+// test_fn.cmp
+int test() {
+    // --- valid code starts here ---
+    int x, y = 42;
+    float f;
+    char c;
+    const int k = 10;
 
-    //int md(){
-    //    int x = 6;
-    //    return 1;
-    //}
-    
-    return  100;
-    
+    x = y + 1;
+    f = x / 0;  //type mismatch
+
+    x++;
+    --y;
+
+    if (x == y)
+        y = x;
+    else
+        y = 0;
+
+    while (y < k)
+        y = y + 1;
+
+    repeat
+        y = y - 1;
+    until (y == 42);
+
+    // for with declaration and its own inner scope
+    for (int i = 0; i < 3; i++)
+        x = x * i;
+
+
+    switch (x) {
+      case 0:
+        y = 100;
+        break;
+      case 1:
+        y = 200;
+        break;
+      default:
+        y = 300;
+    }
+
+    //test();
+
+    return x;
+    // --- valid code ends here ---
+
+
+    // Uncomment any of these to see the corresponding error:
+
+    // int x;              // ERROR: redeclaration of 'x' in same scope
+    // z = 5;              // ERROR: 'z' undeclared
+    // k = 5;              // ERROR: cannot assign to const variable 'k'
+    // return;             // ERROR: return value expected (non-void function)
+
+    // for (int j=0; j<3; j=true) { }  
+    //                     // ERROR: loop condition must be int (j<3 is OK, but "true" isn't an int)
 }
