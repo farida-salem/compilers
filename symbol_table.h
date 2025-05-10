@@ -8,6 +8,7 @@ typedef enum {
     TYPE_INT,
     TYPE_FLOAT,
     TYPE_CHAR,
+    TYPE_STRING,  // New type for strings
     TYPE_VOID,
     TYPE_ERROR
 } Type;
@@ -32,7 +33,17 @@ typedef struct {
 typedef struct Symbol {
     char       *name;
     SymbolKind     kind;
-    TypeImmut    spec;              
+    TypeImmut    spec;
+    
+    union {
+        int    int_val;
+        float  float_val;
+        char   char_val;
+        char*  string_val;  // New field for string values
+    } value;
+    
+    int has_value;
+    int is_used;    
     
     int         param_count;
     Param       params[MAX_PARAMS];
@@ -52,5 +63,15 @@ Symbol* lookup_symbol(const char *name);
 
 const char* type_to_string(Type t);
 const char* spec_to_string(TypeImmut s);
+
+void set_int_value(const char *name, int value);
+void set_float_value(const char *name, float value);
+void set_char_value(const char *name, char value);
+
+int get_int_value(const char *name);
+float get_float_value(const char *name);
+char get_char_value(const char *name);
+void check_unused_variables(void);
+void print_symbol_table_to_file(const char *filename);
 
 #endif // SYMBOL_TABLE_H

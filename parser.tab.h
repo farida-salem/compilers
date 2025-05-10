@@ -45,7 +45,7 @@
 extern int yydebug;
 #endif
 /* "%code requires" blocks.  */
-#line 23 "parser.y"
+#line 27 "parser.y"
 
   #include "symbol_table.h"
 
@@ -54,6 +54,13 @@ extern int yydebug;
       char       *name;
       struct IdList *next;
   } IdList;
+
+  /* ExprValue for holding both place and type: */
+  typedef struct {
+      char *place;
+      Type type;
+      int is_literal;  /* Flag to indicate if this is a direct literal value */
+  } ExprValue;
 
   /* Helpers to build a list of identifiers: */
   static IdList* new_idlist(char *n) {
@@ -69,7 +76,7 @@ extern int yydebug;
       return l;
   }
 
-#line 73 "parser.tab.h"
+#line 80 "parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -81,42 +88,46 @@ extern int yydebug;
     YYerror = 256,                 /* error  */
     YYUNDEF = 257,                 /* "invalid token"  */
     NUMBER = 258,                  /* NUMBER  */
-    IDENTIFIER = 259,              /* IDENTIFIER  */
-    IF = 260,                      /* IF  */
-    THEN = 261,                    /* THEN  */
-    ELSE = 262,                    /* ELSE  */
-    WHILE = 263,                   /* WHILE  */
-    REPEAT = 264,                  /* REPEAT  */
-    UNTIL = 265,                   /* UNTIL  */
-    FOR = 266,                     /* FOR  */
-    SWITCH = 267,                  /* SWITCH  */
-    CASE = 268,                    /* CASE  */
-    DEFAULT = 269,                 /* DEFAULT  */
-    BREAK = 270,                   /* BREAK  */
-    CONTINUE = 271,                /* CONTINUE  */
-    RETURN = 272,                  /* RETURN  */
-    INT = 273,                     /* INT  */
-    FLOAT = 274,                   /* FLOAT  */
-    CHAR = 275,                    /* CHAR  */
-    VOID = 276,                    /* VOID  */
-    CONST = 277,                   /* CONST  */
-    EQ = 278,                      /* EQ  */
-    NEQ = 279,                     /* NEQ  */
-    LE = 280,                      /* LE  */
-    GE = 281,                      /* GE  */
-    PLUS = 282,                    /* PLUS  */
-    MINUS = 283,                   /* MINUS  */
-    MULT = 284,                    /* MULT  */
-    DIV = 285,                     /* DIV  */
-    MOD = 286,                     /* MOD  */
-    INC = 287,                     /* INC  */
-    DEC = 288,                     /* DEC  */
-    AND = 289,                     /* AND  */
-    OR = 290,                      /* OR  */
-    NOT = 291,                     /* NOT  */
-    BITWISE_AND = 292,             /* BITWISE_AND  */
-    BITWISE_NOT = 293,             /* BITWISE_NOT  */
-    BITWISE_OR = 294               /* BITWISE_OR  */
+    CHAR_LITERAL = 259,            /* CHAR_LITERAL  */
+    FLOAT_LITERAL = 260,           /* FLOAT_LITERAL  */
+    IDENTIFIER = 261,              /* IDENTIFIER  */
+    STRING_LITERAL = 262,          /* STRING_LITERAL  */
+    IF = 263,                      /* IF  */
+    ELSE = 264,                    /* ELSE  */
+    WHILE = 265,                   /* WHILE  */
+    REPEAT = 266,                  /* REPEAT  */
+    UNTIL = 267,                   /* UNTIL  */
+    FOR = 268,                     /* FOR  */
+    SWITCH = 269,                  /* SWITCH  */
+    CASE = 270,                    /* CASE  */
+    DEFAULT = 271,                 /* DEFAULT  */
+    BREAK = 272,                   /* BREAK  */
+    CONTINUE = 273,                /* CONTINUE  */
+    RETURN = 274,                  /* RETURN  */
+    INT = 275,                     /* INT  */
+    FLOAT = 276,                   /* FLOAT  */
+    CHAR = 277,                    /* CHAR  */
+    STRING = 278,                  /* STRING  */
+    VOID = 279,                    /* VOID  */
+    CONST = 280,                   /* CONST  */
+    EQ = 281,                      /* EQ  */
+    NEQ = 282,                     /* NEQ  */
+    LE = 283,                      /* LE  */
+    GE = 284,                      /* GE  */
+    PLUS = 285,                    /* PLUS  */
+    MINUS = 286,                   /* MINUS  */
+    MULT = 287,                    /* MULT  */
+    DIV = 288,                     /* DIV  */
+    MOD = 289,                     /* MOD  */
+    AND = 290,                     /* AND  */
+    OR = 291,                      /* OR  */
+    NOT = 292,                     /* NOT  */
+    NO_ELSE = 293,                 /* NO_ELSE  */
+    BITWISE_OR = 294,              /* BITWISE_OR  */
+    BITWISE_AND = 295,             /* BITWISE_AND  */
+    BITWISE_NOT = 296,             /* BITWISE_NOT  */
+    INC = 297,                     /* INC  */
+    DEC = 298                      /* DEC  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -125,16 +136,18 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 48 "parser.y"
+#line 59 "parser.y"
 
     int         num;
+    double      fnum;  
     char       *id;
     Type        type;           /* for expressions and constants */
     TypeImmut   immutability;   /* for types and function returns */
     Param       param;          /* for single parameter */
     IdList     *idlist;         /* for decl_list */
+    ExprValue   expr;           /* for expressions - holds both place and type */
 
-#line 138 "parser.tab.h"
+#line 151 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

@@ -1,0 +1,9 @@
+==== QUADRUPLES ====
+  #  | Operation     | Arg1      | Arg2      | Result
+-----|---------------|-----------|-----------|----------
+   0 | LABEL         | main      | -         | -        
+   1 | ASSIGN        | 3         | -         | x        
+   2 | ASSIGN        | 5         | -         | y        
+   3 | ADD           | x         | y         | t0       
+   4 | ASSIGN        | t0        | -         | z        
+   5 | RETURN        | -         | -         | -        
