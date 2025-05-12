@@ -2,7 +2,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include "parser.tab.h"
+
+void token_seen(const char* token_text);
+
+#define YY_USER_ACTION { token_seen(yytext); }
+
+// Track line numbers
+extern int yylineno;
+extern int column; 
 %}
+
 
 DIGIT       [0-9]
 LETTER      [A-Za-z_]
@@ -10,7 +19,9 @@ ID          {LETTER}({LETTER}|{DIGIT})*
 
 %%
 
-[ \t\r\n]+        ;  // This rule ignores whitespace and does not need a print
+\n          { column = 1; yylineno++; printf("line:%d\n",yylineno);}
+
+[ \t\r]+        ;  // This rule ignores whitespace and does not need a print
 
 "//".*            ;  // Single-line comment (no print here unless needed)
 
@@ -26,7 +37,6 @@ ID          {LETTER}({LETTER}|{DIGIT})*
 "case"            { printf("Keyword CASE: %s\n", yytext); return CASE; }
 "default"         { printf("Keyword DEFAULT: %s\n", yytext); return DEFAULT; }
 "break"           { printf("Keyword BREAK: %s\n", yytext); return BREAK; }
-"continue"        { printf("Keyword CONTINUE: %s\n", yytext); return CONTINUE; }
 "return"          { printf("Keyword RETURN: %s\n", yytext); return RETURN; }
 
 "int"             { printf("Type INT: %s\n", yytext); return INT; }
@@ -40,6 +50,8 @@ ID          {LETTER}({LETTER}|{DIGIT})*
 "!="              { printf("Operator NEQ: %s\n", yytext); return NEQ; }
 "<="              { printf("Operator LE: %s\n", yytext); return LE; }
 ">="              { printf("Operator GE: %s\n", yytext); return GE; }
+"++"              { printf("Operator INC: %s\n", yytext); return INC; }
+"--"              { printf("Operator DEC: %s\n", yytext); return DEC; }
 
 "<"               { printf("Operator < : %s\n", yytext); return '<'; }
 ">"               { printf("Operator > : %s\n", yytext); return '>'; }

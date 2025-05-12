@@ -89,19 +89,20 @@ char *float_to_string(float value) {
 // Get the string representation of an operation
 char *get_op_name(QuadOp op) {
     static const char *op_names[] = {
-        "ADD", "SUB", "MUL", "DIV", "MOD",
+        "ADD", "SUB", "MUL", "DIV", "MOD","NEG",
         "ASSIGN",
         "LT", "GT", "LE", "GE", "EQ", "NEQ",
         "AND", "OR", "NOT",
         "LABEL", "JUMP", "JUMPZ", "JUMPNZ",
-        "PARAM", "CALL", "RETURN",
+        "PARAM","ARG", "CALL", "RETURN",
         "ASSIGN_CHR",
         // Add new string operations
-        "ASSIGN_STR", "CONCAT", "STREQ", "STRNEQ" 
+        "ASSIGN_STR", "CONCAT", "STREQ", "STRNEQ",
+        "INT_TO_FLOAT", "CHAR_TO_STRING"
     };
     
     // Update the upper bound check to include the new operations
-    if (op < QUAD_ADD || op > QUAD_STRNEQ) {
+    if (op < QUAD_ADD || op > QUAD_CHAR_TO_STRING) {
         return "UNKNOWN";
     }
     

@@ -1,0 +1,28 @@
+==== QUADRUPLES ====
+  #  | Operation     | Arg1      | Arg2      | Result
+-----|---------------|-----------|-----------|----------
+   0 | LABEL         | main      | -         | -        
+   1 | ASSIGN        | 10        | -         | x        
+   2 | ASSIGN        | 3.14      | -         | y        
+   3 | ASSIGN_CHR    | 'A'       | -         | z        
+   4 | ASSIGN_STR    | Hello     | -         | msg      
+   5 | ASSIGN        | 100       | -         | MAX      
+   6 | ASSIGN        | 3.14159   | -         | PI       
+   7 | ASSIGN_CHR    | 'A'       | -         | GRADE    
+   8 | ASSIGN_STR    | Welcome   | -         | GREETING 
+   9 | ASSIGN        | 5         | -         | a        
+  10 | ASSIGN        | 2.5       | -         | b        
+  11 | ASSIGN_CHR    | 'B'       | -         | c        
+  12 | ASSIGN_STR    | World     | -         | s        
+  13 | ADD           | a         | x         | t0       
+  14 | ASSIGN        | t0        | -         | sum      
+  15 | DIV           | y         | b         | t1       
+  16 | ASSIGN        | t1        | -         | ratio    
+  17 | ADD           | a         | x         | t2       
+  18 | SUB           | MAX       | 5         | t3       
+  19 | MUL           | t2        | t3        | t4       
+  20 | ASSIGN        | t4        | -         | result   
+  21 | CONCAT        | msg       |           | t5       
+  22 | CONCAT        | t5        | s         | t6       
+  23 | ASSIGN_STR    | t6        | -         | full_message
+  24 | RETURN        | 0         | -         | -        

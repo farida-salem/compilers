@@ -13,11 +13,13 @@ extern int quad_count;
 #define MAX_SYMBOLS 1000  // Maximum symbols to track
 #define MAX_SCOPES 100   // Maximum scope depth
 
-static Symbol *table[HASH_SIZE];
+static int first_scope_export = 1; // Flag to track if this is the first export
 
+const char *STfilename="symbol_tables.txt";
 
-static int     current_scope = 0; //nested 0 global 1 gowa function 2 gowa gowa etc
-
+// With these lines:
+static Scope *current_scope = NULL;  // Current active scope
+static Scope *global_scope = NULL;   // Global scope (always available)
 // ashan lookups saree3a
 static unsigned hash(const char *s) {
     unsigned h = 0;
@@ -26,54 +28,175 @@ static unsigned hash(const char *s) {
 }
 
 void init_symbol_table(void) {
-    for (int i = 0; i < HASH_SIZE; i++) table[i] = NULL;
-    current_scope = 0;
+    // Initialize global scope
+    global_scope = malloc(sizeof(Scope));
+    if (!global_scope) {
+        fprintf(stderr, "Error: Failed to allocate memory for global scope\n");
+        exit(1);
+    }
+    
+    for (int i = 0; i < HASH_SIZE; i++) 
+        global_scope->symbols[i] = NULL;
+        
+    global_scope->parent = NULL;
+    global_scope->level = 0;
+    
+    current_scope = global_scope;  // Start in global scope
 }
 
 void enter_scope(void) {
-    current_scope++;
+    Scope *new_scope = malloc(sizeof(Scope));
+    if (!new_scope) {
+        fprintf(stderr, "Error: Failed to allocate memory for new scope\n");
+        exit(1);
+    }
+    
+    for (int i = 0; i < HASH_SIZE; i++)
+        new_scope->symbols[i] = NULL;
+        
+    new_scope->parent = current_scope;
+    new_scope->level = current_scope->level + 1;
+    current_scope = new_scope;
+}
+
+
+static void export_scope(Scope *scope, FILE *file) {
+    // Print scope header
+    fprintf(file, "\n==== Scope Level %d Symbol Table ====\n", scope->level);
+    fprintf(file, "+-------+----------------+--------+-------------+---------+------------+\n");
+    fprintf(file, "| Scope | Symbol         | Type   | Initialized | Value   | Is Func    |\n");
+    fprintf(file, "+-------+----------------+--------+-------------+---------+------------+\n");
+    
+    // Collect all symbols from this scope
+    Symbol *scope_symbols[MAX_SYMBOLS];
+    int symbol_count = 0;
+    
+    // Collect symbols from this specific scope
+    for (int i = 0; i < HASH_SIZE; i++) {
+        for (Symbol *s = scope->symbols[i]; s; s = s->next) {
+            if (symbol_count < MAX_SYMBOLS) {
+                scope_symbols[symbol_count++] = s;
+            } else {
+                fprintf(stderr, "Warning: Too many symbols in scope to export\n");
+                break;
+            }
+        }
+    }
+    
+    // Print all symbols in this scope
+    for (int i = 0; i < symbol_count; i++) {
+        Symbol *sym = scope_symbols[i];
+        
+        // Get type string
+        const char *type_str;
+        switch (sym->spec.base) {
+            case TYPE_INT: type_str = "int"; break;
+            case TYPE_FLOAT: type_str = "float"; break;
+            case TYPE_CHAR: type_str = "char"; break;
+            case TYPE_STRING: type_str = "string"; break;
+            case TYPE_VOID: type_str = "void"; break;
+            default: type_str = "unknown"; break;
+        }
+        
+        // Format the value field
+        char value_str[64] = "0.00";  // Default value
+        
+        if (sym->kind == SYM_VAR && sym->has_value) {
+            switch (sym->spec.base) {
+                case TYPE_INT:
+                    sprintf(value_str, "%d.00", sym->value.int_val);
+                    break;
+                case TYPE_FLOAT:
+                    sprintf(value_str, "%.2f", sym->value.float_val);
+                    break;
+                case TYPE_CHAR:
+                    sprintf(value_str, "'%c'", sym->value.char_val);
+                    break;
+                case TYPE_STRING:
+                    if (sym->value.string_val) {
+                        if (strlen(sym->value.string_val) > 15) {
+                            sprintf(value_str, "\"%.*s...\"", 12, sym->value.string_val);
+                        } else {
+                            sprintf(value_str, "\"%s\"", sym->value.string_val);
+                        }
+                    } else {
+                        strcpy(value_str, "null");
+                    }
+                    break;
+            }
+        }
+        
+        // Print row with the format requested
+        fprintf(file, "| %-5d | %-14s | %-6s | %-11d | %-7s | %-10d |\n", 
+                sym->scope_level,
+                sym->name, 
+                type_str, 
+                sym->has_value, 
+                value_str,
+                sym->kind == SYM_FUNC ? 1 : 0);
+    }
+    
+    fprintf(file, "+-------+----------------+--------+-------------+---------+------------+\n");
+}
+
+void export_global_scope(void) {
+    FILE *file = fopen(STfilename, first_scope_export ? "w" : "a");
+    if (file) {
+        fprintf(file, "\n==== Global Scope Symbol Table ====\n");
+        export_scope(global_scope, file);
+        fclose(file);
+        first_scope_export = 0;
+    } else {
+        perror("Failed to open scope log file for global scope");
+    }
 }
 
 void exit_scope(void) {
-    // Free any string resources in the current scope before exiting
-    // for (int i = 0; i < HASH_SIZE; i++) {
-    //     Symbol **entryPtr = &table[i];
-    //     while (*entryPtr) {
-    //         Symbol *currentSymbol = *entryPtr;
-
-    //         if (currentSymbol->scope_level == current_scope) {
-    //             // Free string values for string variables
-    //             if (currentSymbol->kind == SYM_VAR && 
-    //                 currentSymbol->spec.base == TYPE_STRING && 
-    //                 currentSymbol->has_value && 
-    //                 currentSymbol->value.string_val != NULL) {
-    //                 free(currentSymbol->value.string_val);
-    //             }
-    //         }
-    //     }
-    // }
+    if (current_scope == global_scope) {
+        fprintf(stderr, "Warning: Cannot exit global scope\n");
+        return;
+    }
     
-    current_scope--;
+    // Export the current scope's symbol table before exiting
+    FILE *file = fopen(STfilename, first_scope_export ? "w" : "a");
+    if (file) {
+        export_scope(current_scope, file);
+        fclose(file);
+        first_scope_export = 0; // Next call will append
+    } else {
+        perror("Failed to open scope log file");
+    }
+    
+    // Just move to parent scope without freeing anything
+    current_scope = current_scope->parent;
 }
 
 int add_variable(const char *name, TypeImmut immutability) {
     unsigned idx = hash(name);
     
-    for (Symbol *s = table[idx]; s; s = s->next) {
-        if (strcmp(s->name, name)==0 && s->scope_level==current_scope) {
+    // Check only in current scope for redeclaration
+    for (Symbol *s = current_scope->symbols[idx]; s; s = s->next) {
+        if (strcmp(s->name, name) == 0) {
             fprintf(stderr, "Semantic error: redeclaration of '%s'\n", name);
             return 0;
         }
     }
+    
     Symbol *sym = malloc(sizeof *sym);
+    if (!sym) {
+        fprintf(stderr, "Error: Failed to allocate memory for symbol\n");
+        return 0;
+    }
+    
     sym->name        = strdup(name);
     sym->kind        = SYM_VAR;
     sym->spec        = immutability;
     sym->param_count = 0;
-    sym->scope_level = current_scope;
+    sym->scope_level = current_scope->level;  // Keep track of level for printing
 
     sym->has_value = 0;  // Mark as uninitialized
     sym->is_used = 0;    // Mark as unused
+    
     switch (immutability.base) {
         case TYPE_INT:   sym->value.int_val = 0; break;
         case TYPE_FLOAT: sym->value.float_val = 0.0f; break;
@@ -81,45 +204,68 @@ int add_variable(const char *name, TypeImmut immutability) {
         case TYPE_STRING: sym->value.string_val = NULL; break;
         default: break;
     }
-    //head insertion
-    sym->next        = table[idx];
-    table[idx]       = sym;
-
+    
+    // Add to current scope's hash table (head insertion)
+    sym->next = current_scope->symbols[idx];
+    current_scope->symbols[idx] = sym;
 
     return 1;
 }
 
 int add_function(const char *name, TypeImmut return_immutability, int param_count, Param *params) {
     unsigned idx = hash(name);
-    /* only global functions */
-    for (Symbol *s = table[idx]; s; s = s->next) {
-        if (strcmp(s->name, name)==0 && s->kind==SYM_FUNC) {
+    
+    /* Functions can only be declared in global scope */
+    if (current_scope != global_scope) {
+        fprintf(stderr, "Semantic error: functions can only be declared in global scope\n");
+        return 0;
+    }
+    
+    // Check for redefinition
+    for (Symbol *s = global_scope->symbols[idx]; s; s = s->next) {
+        if (strcmp(s->name, name) == 0 && s->kind == SYM_FUNC) {
             fprintf(stderr, "Semantic error: function '%s' redefined\n", name);
             return 0;
         }
     }
+    
     Symbol *sym = malloc(sizeof *sym);
+    if (!sym) {
+        fprintf(stderr, "Error: Failed to allocate memory for function symbol\n");
+        return 0;
+    }
+    
     sym->name        = strdup(name);
     sym->kind        = SYM_FUNC;
     sym->spec        = return_immutability;
     sym->param_count = param_count;
+    sym->scope_level = 0;  // Functions are always at global scope
+    sym->has_value = 0;  // Mark as uninitialized
+    sym->is_used = 0;    // Mark as unused
+    
     for (int i = 0; i < param_count; i++)
         sym->params[i] = params[i];
-    sym->scope_level = 0;
-    sym->next        = table[idx];
-    table[idx]       = sym;
+    
+    // Add to global scope
+    sym->next = global_scope->symbols[idx];
+    global_scope->symbols[idx] = sym;
 
     return 1;
 }
 
 Symbol* lookup_symbol(const char *name) {
     unsigned idx = hash(name);
-    for (Symbol *s = table[idx]; s; s = s->next) {
-        if (strcmp(s->name, name) == 0 && s->scope_level <= current_scope) {
-            return s; 
+    
+    // Search in current scope first, then parent scopes
+    for (Scope *scope = current_scope; scope; scope = scope->parent) {
+        for (Symbol *s = scope->symbols[idx]; s; s = s->next) {
+            if (strcmp(s->name, name) == 0) {
+                return s;
+            }
         }
     }
-    return NULL; 
+    
+    return NULL;
 }
 
 const char* type_to_string(Type t) {
@@ -259,11 +405,10 @@ const char* get_string_value(const char *name) {
     return s->value.string_val;
 }
 
-void check_unused_variables() {
-    int found_unused = 0;
-    
+// Function to check symbols in a scope
+int check_scope(Scope *scope,int found_unused) {  // Missing semicolon after this line
     for (int i = 0; i < HASH_SIZE; i++) {
-        for (Symbol *s = table[i]; s; s = s->next) {
+        for (Symbol *s = scope->symbols[i]; s; s = s->next) {
             if (s->kind == SYM_VAR && !s->is_used) {
                 fprintf(stderr, "Warning: Variable '%s' at scope level %d is declared but never used\n", 
                         s->name, s->scope_level);
@@ -271,9 +416,34 @@ void check_unused_variables() {
             }
         }
     }
+    return found_unused;
+}
+
+void check_unused_variables() {
+    int found_unused = 0;
+    
+  // Add this semicolon here!
+    
+    // Start with current scope and go up the chain
+    for (Scope *scope = current_scope; scope; scope = scope->parent) {
+        found_unused=check_scope(scope,found_unused);
+    }
     
     if (found_unused) {
         fprintf(stderr, "\n");
+    }
+}
+// Helper function for collecting symbols (moved outside)
+static void collect_symbols_from_scope(Symbol *all_symbols[], int *symbol_count_ptr, Scope *scope) {
+    for (int i = 0; i < HASH_SIZE; i++) {
+        for (Symbol *s = scope->symbols[i]; s; s = s->next) {
+            if (*symbol_count_ptr < MAX_SYMBOLS * MAX_SCOPES) {
+                all_symbols[(*symbol_count_ptr)++] = s;
+            } else {
+                fprintf(stderr, "Warning: Too many symbols to print\n");
+                return;
+            }
+        }
     }
 }
 
@@ -289,21 +459,51 @@ void print_symbol_table_to_file(const char *filename) {
     fprintf(file, "| Scope | Symbol         | Type   | Initialized | Value   | Is Func    |\n");
     fprintf(file, "+-------+----------------+--------+-------------+---------+------------+\n");
     
-    // Collect all symbols from hash table
+    // Collect all symbols from all scopes
     Symbol *all_symbols[MAX_SYMBOLS * MAX_SCOPES];
     int symbol_count = 0;
     
-    for (int i = 0; i < HASH_SIZE; i++) {
-        for (Symbol *s = table[i]; s; s = s->next) {
-            all_symbols[symbol_count++] = s;
+
+    
+    // Start with global scope
+    collect_symbols_from_scope(all_symbols, &symbol_count, global_scope);
+    
+    // If we're in a nested scope, collect symbols from all parent scopes
+    if (current_scope != global_scope) {
+        // Create an array to store scopes in order
+        Scope *scope_stack[MAX_SCOPES];
+        int scope_count = 0;
+        
+        // Add all scopes from current up to (but not including) global
+        for (Scope *scope = current_scope; scope && scope != global_scope; scope = scope->parent) {
+            if (scope_count < MAX_SCOPES) {
+                scope_stack[scope_count++] = scope;
+            }
+        }
+        
+        // Process scopes in reverse order (innermost to outermost)
+        for (int i = 0; i < scope_count; i++) {
+            collect_symbols_from_scope(all_symbols, &symbol_count, scope_stack[i]);
         }
     }
     
-    // Print all symbols in DECLARATION ORDER (oldest first)
+    // // Sort symbols by scope level (optional)
+    // // This ensures symbols appear grouped by scope in the output
+    // for (int i = 0; i < symbol_count - 1; i++) {
+    //     for (int j = 0; j < symbol_count - i - 1; j++) {
+    //         if (all_symbols[j]->scope_level > all_symbols[j+1]->scope_level) {
+    //             Symbol *temp = all_symbols[j];
+    //             all_symbols[j] = all_symbols[j+1];
+    //             all_symbols[j+1] = temp;
+    //         }
+    //     }
+    // }
+    
+    // Print all symbols
     for (int i = 0; i < symbol_count; i++) {
         Symbol *sym = all_symbols[i];
         
-        // Rest of your printing code is unchanged...
+        // Get type string
         const char *type_str;
         switch (sym->spec.base) {
             case TYPE_INT: type_str = "int"; break;
@@ -386,7 +586,6 @@ void print_symbol_table_to_file(const char *filename) {
                     } 
                     else {
                         // It's a variable or expression result
-                        // For now, just show the temporary variable name
                         strcpy(value_str, quadruples[j].arg1);
                         value_found = 1;
                     }
@@ -434,4 +633,52 @@ void print_symbol_table_to_file(const char *filename) {
     fprintf(file, "+-------+----------------+--------+-------------+---------+------------+\n");
     
     fclose(file);
+}
+
+// Helper function for cleaning up a single scope (moved outside)
+static void cleanup_scope(Scope *scope) {
+    if (!scope) return;
+    
+    // Free all symbols in this scope
+    for (int i = 0; i < HASH_SIZE; i++) {
+        Symbol *curr = scope->symbols[i];
+        while (curr) {
+            Symbol *next = curr->next;
+            
+            // Free the symbol's name
+            free(curr->name);
+            
+            // Free string values if any
+            if (curr->kind == SYM_VAR && 
+                curr->spec.base == TYPE_STRING && 
+                curr->has_value && 
+                curr->value.string_val) {
+                free(curr->value.string_val);
+            }
+            
+            // Free the symbol itself
+            free(curr);
+            curr = next;
+        }
+    }
+    
+    // Free the scope structure
+    free(scope);
+}
+
+void cleanup_symbol_table(void) {
+    // Clean up all non-global scopes first
+    Scope *scope = current_scope;
+    while (scope && scope != global_scope) {
+        Scope *parent = scope->parent;
+        cleanup_scope(scope);
+        scope = parent;
+    }
+    
+    // Finally clean up global scope
+    cleanup_scope(global_scope);
+    
+    // Reset pointers
+    current_scope = NULL;
+    global_scope = NULL;
 }

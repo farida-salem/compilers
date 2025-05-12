@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#define HASH_SIZE  97 // prime number for hash table size
 
 typedef enum {
     TYPE_INT,
@@ -52,9 +53,16 @@ typedef struct Symbol {
     struct Symbol *next;    
 } Symbol;
 
+typedef struct Scope {
+    Symbol *symbols[HASH_SIZE];  // Hash table for this scope
+    struct Scope *parent;        // Parent (enclosing) scope
+    int level;                   // Numeric level of this scope
+} Scope;
+
 void    init_symbol_table(void);
 void    enter_scope(void);
 void    exit_scope(void);
+void export_global_scope(void);
 
 int     add_variable(const char *name, TypeImmut immutability);
 int     add_function(const char *name, TypeImmut return_immutability, int param_count, Param *params);
@@ -67,11 +75,15 @@ const char* spec_to_string(TypeImmut s);
 void set_int_value(const char *name, int value);
 void set_float_value(const char *name, float value);
 void set_char_value(const char *name, char value);
+void set_string_value(const char *name, const char *value); 
+
 
 int get_int_value(const char *name);
 float get_float_value(const char *name);
 char get_char_value(const char *name);
+const char* get_string_value(const char *name); 
+
 void check_unused_variables(void);
 void print_symbol_table_to_file(const char *filename);
-
+void cleanup_symbol_table(void);
 #endif // SYMBOL_TABLE_H

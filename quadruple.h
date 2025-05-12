@@ -10,6 +10,8 @@ typedef enum {
     QUAD_MUL,      // Multiplication: *
     QUAD_DIV,      // Division: /
     QUAD_MOD,      // Modulo: %
+    QUAD_NEG,      // Unary negation: -x
+    
     
     QUAD_ASSIGN,   // Assignment: =
     
@@ -32,13 +34,17 @@ typedef enum {
     QUAD_JUMPNZ,   // Jump if not zero/true
     
     QUAD_PARAM,    // Function parameter
+    QUAD_ARG,
     QUAD_CALL,     // Function call
     QUAD_RETURN,   // Return from function
     QUAD_ASSIGN_CHAR,
     QUAD_ASSIGN_STR,    // For string assignment
     QUAD_CONCAT,        // For string concatenation
     QUAD_STREQ,         // For string equality comparison
-    QUAD_STRNEQ 
+    QUAD_STRNEQ,
+    QUAD_INT_TO_FLOAT,  // Convert int to float
+    QUAD_CHAR_TO_STRING,
+
 } QuadOp;
 
 // Define quadruple structure

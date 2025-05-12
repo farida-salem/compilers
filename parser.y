@@ -6,24 +6,48 @@
 #include "quadruple.h"  
 #include <ctype.h>
 
+#ifndef HASH_SIZE
+#define HASH_SIZE 97
+#endif
+
 void yyerror(const char *s);
 void var_error(const char *message, const char *var_name);
 int yylex(void);
+void token_seen(const char* token_text); 
 extern FILE *yyin;
+extern int yylineno;
+extern int yyleng;  
+int column = 1; // Track column positions
+char *last_token = NULL; // Keep track of the last token seen
+int error_count = 0;
+
+char *switch_expr_global;  
+char *end_label_global; 
 
 void check_var_mod(const char *name); 
 void check_op_types(Type left_type, Type right_type, const char* op, int allow_strings, int allow_float);
 static Type type_arith(Type a, Type b); 
 static int is_literal(const char *str);
 
+#define YYMAXDEPTH 20000
 #define MAX_PARAMS  16
 static Param param_list[MAX_PARAMS];
 static int   param_count = 0;
 static TypeImmut current_return_immutability;
 
+// Add at the top of your file
+char* start_loop_label[20];
+char* update_loop_label[20];
+char* end_loop_label[20];
+char* loop_body_label[20];
+
+int for_count=0;
+
 static char *func_name_temp;
 %}
 
+%define parse.error verbose
+%locations
 %code requires {
   #include "symbol_table.h"
 
@@ -71,18 +95,20 @@ static char *func_name_temp;
 %token <fnum> FLOAT_LITERAL  // Use fnum instead of num
 %token <id>     IDENTIFIER STRING_LITERAL
 
-%token IF ELSE WHILE REPEAT UNTIL FOR SWITCH CASE DEFAULT BREAK CONTINUE RETURN
+%token IF ELSE WHILE REPEAT UNTIL FOR SWITCH CASE DEFAULT BREAK RETURN
 %token INT FLOAT CHAR STRING VOID CONST
 %token EQ NEQ LE GE
-%token PLUS MINUS MULT DIV MOD AND OR NOT
+%token PLUS MINUS MULT DIV MOD AND OR NOT INC DEC
 %token ';' ',' '(' ')' '{' '}' '=' '<' '>' ':'
 
 /* Nonterminals carrying types and specs: */
-%type <expr>               expression constant
+%type <expr>               expression constant primary_expression 
 %type <immutability>       type func_types
 %type <param>              param      /* single parameter */
 %type <param>              param_list /* used only internally */
 %type <idlist>             decl_list
+%type <num>              arg_list 
+
 
 /* Fix dangling else problem with precedence */
 %nonassoc NO_ELSE
@@ -91,13 +117,12 @@ static char *func_name_temp;
 /* Operator precedence - arranged from lowest to highest */
 %left OR
 %left AND  
-%left BITWISE_OR
-%left BITWISE_AND
 %left EQ NEQ
 %left '<' '>' LE GE
 %left PLUS MINUS
 %left MULT DIV MOD
-%right NOT BITWISE_NOT INC DEC
+%right UMINUS  
+%right NOT 
 
 %%
 program
@@ -225,14 +250,26 @@ declaration
               // Emit quadruple for assignment based on type
               if (ts.base == TYPE_STRING) {
                 emit(QUAD_ASSIGN_STR, place, NULL, it->name);
+                set_string_value(it->name, place);
               } else if (ts.base == TYPE_CHAR && $4.is_literal) {
                 emit(QUAD_ASSIGN_CHAR, place, NULL, it->name);
+                if (strlen(place) >= 3) {
+                set_char_value(it->name, place[1]);
+                }
               } else {
                 emit(QUAD_ASSIGN, place, NULL, it->name);
+                if ($4.is_literal) {
+                if (ts.base == TYPE_INT) {
+                  set_int_value(it->name, atoi(place));
+                } else if (ts.base == TYPE_FLOAT) {
+                  set_float_value(it->name, atof(place));
+                }
+              }
               }
             }
           }
         }
+    | type error ';' { yyerrok; } 
     ;
 
 block
@@ -259,14 +296,24 @@ func_block
 
           enter_scope();
                     
-          for (int i = 0; i < param_count; i++)
+          for (int i = 0; i < param_count; i++){
             add_variable(param_list[i].name,
                          param_list[i].spec);
+
+            // Mark parameters as initialized and used
+            Symbol *param = lookup_symbol(param_list[i].name);
+            if (param) {
+              param->has_value = 1;  // Parameters are initialized when function is called
+              param->is_used = 1;    // Don't warn about unused parameters
+            }
+          }
         }
-      block_content return_statement '}'
-        {
+      block_content return_statement 
+      {
           exit_scope();
-        }
+      }
+      '}'
+
     ;
 
 statements
@@ -283,9 +330,10 @@ statement
     | switch_statement
     | return_statement
     | break_statement
-    | continue_statement
+    | inc_dec_statement  // Add this line
     | func_call
     | block
+    | error ';'  { yyerrok; } 
     ;
 
 assignment
@@ -306,41 +354,138 @@ assignment
           // Choose appropriate quadruple type based on variable type and expression
           if (v->spec.base == TYPE_STRING) {
             emit(QUAD_ASSIGN_STR, place, NULL, $1);
+            set_string_value($1, place);
           } else if (v->spec.base == TYPE_CHAR && $3.is_literal) {
             emit(QUAD_ASSIGN_CHAR, place, NULL, $1);
+            if (strlen(place) >= 3) {
+              set_char_value($1, place[1]);
+            }
           } else {
             emit(QUAD_ASSIGN, place, NULL, $1);
+            if ($3.is_literal) {
+              if (v->spec.base == TYPE_INT) {
+                set_int_value($1, atoi(place));
+              } else if (v->spec.base == TYPE_FLOAT) {
+                set_float_value($1, atof(place));
+              }
+            }
           }
           
           // Update variable value in symbol table
           v->has_value = 1;
         }
+    | IDENTIFIER '=' error ';' { yyerrok; } /* Error recovery for assignment errors */    
     ;
 
 break_statement
     : BREAK ';'
         {
           // Generate quadruple for break
-          emit(QUAD_JUMP, NULL, NULL, "break_target");
+          emit(QUAD_JUMP, NULL, NULL, end_label_global);
         }
     ;
 
-continue_statement
-    : CONTINUE ';'
+
+    inc_dec_statement
+    : IDENTIFIER INC ';'
         {
-          // Generate quadruple for continue
-          emit(QUAD_JUMP, NULL, NULL, "continue_target");
+          Symbol *v = lookup_symbol($1);
+          if (!v || v->kind != SYM_VAR) var_error("Undeclared variable", $1);
+          if (v->spec.is_const) var_error("Cannot modify const variable", $1);
+          
+          // Check if the variable type is numeric
+          if (v->spec.base != TYPE_INT && v->spec.base != TYPE_FLOAT) {
+            fprintf(stderr, "Error: Increment operation requires numeric types (int or float)\n");
+            exit(1);
+          }
+          
+          // Generate quadruples for x = x + 1
+          char *temp = new_temp();
+          char *one = int_to_string(1);
+          
+          emit(QUAD_ADD, $1, one, temp);
+          emit(QUAD_ASSIGN, temp, NULL, $1);
+          
+          // Mark as initialized
+          v->has_value = 1;
+        }
+    | IDENTIFIER DEC ';'
+        {
+          Symbol *v = lookup_symbol($1);
+          if (!v || v->kind != SYM_VAR) var_error("Undeclared variable", $1);
+          if (v->spec.is_const) var_error("Cannot modify const variable", $1);
+          
+          // Check if the variable type is numeric
+          if (v->spec.base != TYPE_INT && v->spec.base != TYPE_FLOAT) {
+            fprintf(stderr, "Error: Decrement operation requires numeric types (int or float)\n");
+            exit(1);
+          }
+          
+          // Generate quadruples for x = x - 1
+          char *temp = new_temp();
+          char *one = int_to_string(1);
+          
+          emit(QUAD_SUB, $1, one, temp);
+          emit(QUAD_ASSIGN, temp, NULL, $1);
+          
+          // Mark as initialized
+          v->has_value = 1;
         }
     ;
 
 func_call
-    : IDENTIFIER '(' ')' ';'
+    : IDENTIFIER '(' ')' ';'  // Keep existing no-parameter case
         {
           Symbol *f = lookup_symbol($1);
           if (!f || f->kind!=SYM_FUNC) var_error("Undeclared function", $1);
           
+          // Check if function expects parameters
+          if (f->param_count > 0) {
+            fprintf(stderr, "Error: Function '%s' expects %d arguments, but none were provided\n", 
+                    $1, f->param_count);
+            exit(1);
+          }
+          
           // Generate quadruple for function call
           emit(QUAD_CALL, $1, "0", NULL); // 0 args
+        }
+    | IDENTIFIER '(' arg_list ')' ';'  // Add support for arguments
+        {
+          Symbol *f = lookup_symbol($1);
+          if (!f || f->kind!=SYM_FUNC) var_error("Undeclared function", $1);
+          
+          // Check if argument count matches parameter count
+          int arg_count = $<num>3;  // Get the argument count from arg_list
+          if (arg_count != f->param_count) {
+            fprintf(stderr, "Error: Function '%s' expects %d arguments, but %d were provided\n", 
+                    $1, f->param_count, arg_count);
+            exit(1);
+          }
+          
+          // Generate quadruple for function call with arguments
+          char arg_count_str[16];
+          snprintf(arg_count_str, sizeof(arg_count_str), "%d", arg_count);
+          emit(QUAD_CALL, $1, arg_count_str, NULL);
+        }
+    ;
+
+// New rule for argument lists
+arg_list
+    : expression
+        {
+          // First argument - emit ARG quadruple
+          emit(QUAD_ARG, $1.place, NULL, NULL);
+          
+          // Return the count of arguments seen so far
+          $<num>$ = 1;
+        }
+    | arg_list ',' expression
+        {
+          // Additional argument - emit ARG quadruple
+          emit(QUAD_ARG, $3.place, NULL, NULL);
+          
+          // Return the incremented count of arguments
+          $<num>$ = $<num>1 + 1;
         }
     ;
 
@@ -359,26 +504,26 @@ if_statement
         {
           // Generate end label after processing the if-body
           char *end_label = new_label();
+          end_loop_label[for_count]=end_label;
           
           // Jump to end after then part
           emit(QUAD_JUMP, NULL, NULL, end_label);
           
           // Place else label before processing the else-body
-          char *else_label = $<id>1;
-          emit(QUAD_LABEL, else_label, NULL, NULL);
+
+          emit(QUAD_LABEL, update_loop_label[for_count], NULL, NULL);
           
           // Free the else label as we're done with it
-          free(else_label);
+
           
           // Pass the end label to the next rule
-          $<id>$ = strdup(end_label);
+
         }
       statement
         {
           // Place end label after else part
-          char *end_label = $<id>3;
-          emit(QUAD_LABEL, end_label, NULL, NULL);
-          free(end_label);
+          emit(QUAD_LABEL, end_loop_label[for_count], NULL, NULL);
+          for_count++;
         }
     ;
 
@@ -391,132 +536,126 @@ if_start
             
           // Generate label
           char *label = new_label();
+          update_loop_label[for_count]=label;
           
           // Jump to end/else if condition is false
           char *place = $3.place;
           emit(QUAD_JUMPZ, place, NULL, label);
           
-          // Pass the label to the next rule
-          $<id>$ = strdup(label);
+
         }
     ;
 
     
 while_statement
-    : WHILE '(' expression ')' statement
-        {
-          // Generate label for loop start
-          char *start_label = new_label();
-          
-          // Generate label for loop end
-          char *end_label = new_label();
-          
-          // Place start label
-          emit(QUAD_LABEL, start_label, NULL, NULL);
-          
-          // Jump to end if condition is false
-          char *place = $3.place;
-          emit(QUAD_JUMPZ, place, NULL, end_label);
-          
-          // Jump back to start after body
-          emit(QUAD_JUMP, NULL, NULL, start_label);
-          
-          // Place end label
-          emit(QUAD_LABEL, end_label, NULL, NULL);
-          
-          if ($3.type != TYPE_INT) var_error("Condition must be int in while loop", "while");
-        }
+    : WHILE '('
+    {
+      char *start_label = new_label();
+      char *end_label = new_label(); 
+      start_loop_label[for_count]=start_label;
+      end_loop_label[for_count]=end_label;
+
+      // Place the start label
+      emit(QUAD_LABEL, start_label, NULL, NULL);
+    } 
+    expression ')'
+    {
+      char *place = $4.place;
+      emit(QUAD_JUMPZ, place, NULL, end_loop_label[for_count]);
+
+    } 
+    statement
+    {
+
+      emit(QUAD_JUMP, NULL, NULL, start_loop_label[for_count]);
+      
+      // Place end label
+      emit(QUAD_LABEL, end_loop_label[for_count], NULL, NULL);
+      for_count++;
+      
+    }
     ;
 
 repeat_until_statement
-    : REPEAT statements UNTIL '(' expression ')' ';'
+    : REPEAT
+    {
+      char *start_label = new_label();
+      start_loop_label[for_count]=start_label;
+
+      // Place the start label
+      emit(QUAD_LABEL, start_label, NULL, NULL);
+
+    } statements UNTIL '(' expression ')' ';'
         {
-          // Generate label for loop start
-          char *start_label = new_label();
-          
-          // Place start label
-          emit(QUAD_LABEL, start_label, NULL, NULL);
+
           
           // Jump back to start if condition is false
-          char *place = $5.place;
-          emit(QUAD_JUMPZ, place, NULL, start_label);
+          char *place = $6.place;
+          emit(QUAD_JUMPZ, place, NULL, start_loop_label[for_count]);
           
-          if ($5.type != TYPE_INT) var_error("Condition must be int in repeat-until loop", "until");
         }
     ;
 
 for_statement
-    : FOR '(' declaration expression ';' expression ')' statement
-        {
-          // Generate condition label
-          char *cond_label = new_label();
-          
-          // Generate update label
-          char *update_label = new_label();
-          
-          // Generate end label
-          char *end_label = new_label();
-          
-          // Place condition label
-          emit(QUAD_LABEL, cond_label, NULL, NULL);
-          
-          // Jump to end if condition is false
-          char *cond_place = $4.place;
-          emit(QUAD_JUMPZ, cond_place, NULL, end_label);
-          
-          // Jump to update after body
-          emit(QUAD_JUMP, NULL, NULL, update_label);
-          
-          // Place update label
-          emit(QUAD_LABEL, update_label, NULL, NULL);
-          
-          // Evaluate update expression
-          char *update_place = $6.place;
-          
-          // Jump back to condition
-          emit(QUAD_JUMP, NULL, NULL, cond_label);
-          
-          // Place end label
-          emit(QUAD_LABEL, end_label, NULL, NULL);
-          
-          if ($4.type != TYPE_INT) var_error("Condition must be int in for loop", "for");
-        }
-    | FOR '(' assignment expression ';' expression ')' statement
-        {
-          // Generate condition label
-          char *cond_label = new_label();
-          
-          // Generate update label
-          char *update_label = new_label();
-          
-          // Generate end label
-          char *end_label = new_label();
-          
-          // Place condition label
-          emit(QUAD_LABEL, cond_label, NULL, NULL);
-          
-          // Jump to end if condition is false
-          char *cond_place = $4.place;
-          emit(QUAD_JUMPZ, cond_place, NULL, end_label);
-          
-          // Jump to update after body
-          emit(QUAD_JUMP, NULL, NULL, update_label);
-          
-          // Place update label
-          emit(QUAD_LABEL, update_label, NULL, NULL);
-          
-          // Evaluate update expression
-          char *update_place = $6.place;
-          
-          // Jump back to condition
-          emit(QUAD_JUMP, NULL, NULL, cond_label);
-          
-          // Place end label
-          emit(QUAD_LABEL, end_label, NULL, NULL);
-          
-          if ($4.type != TYPE_INT) var_error("Condition must be int in for loop", "for");
-        }
+    : FOR '(' for_start
+    { 
+      char *start_label = new_label();
+      char *body_label = new_label();
+      char *update_label = new_label();
+      char *end_label = new_label(); 
+      start_loop_label[for_count]=start_label;
+      loop_body_label[for_count]=body_label;
+      update_loop_label[for_count]=update_label;
+      end_loop_label[for_count]=end_label;
+
+      // Place the start label
+      emit(QUAD_LABEL, start_label, NULL, NULL);
+
+    }
+    expression ';'
+    {
+      
+      char *condition_place = $5.place;
+      emit(QUAD_JUMPZ, condition_place, NULL, end_loop_label[for_count]);
+      emit(QUAD_JUMP, NULL, NULL, loop_body_label[for_count]);
+      emit(QUAD_LABEL, update_loop_label[for_count], NULL, NULL);
+
+    }
+    for_update_expr ')'
+    {
+    emit(QUAD_JUMP, NULL, NULL, start_loop_label[for_count]);
+    emit(QUAD_LABEL, loop_body_label[for_count], NULL, NULL);
+    }
+    statement
+    {
+      emit(QUAD_JUMP, NULL, NULL, update_loop_label[for_count]);
+      emit(QUAD_LABEL,end_loop_label[for_count], NULL, NULL);
+
+      for_count++;
+    }
     ;
+
+for_start : declaration | assignment;
+
+for_update_expr
+    : expression          /* Handles i++ and other expressions */
+    | IDENTIFIER '=' expression  /* Handles i=i+1 directly */
+      {
+        Symbol *v = lookup_symbol($1);
+        if (!v || v->kind!=SYM_VAR) var_error("Undeclared variable", $1);
+        if (v->spec.is_const) var_error("Cannot assign to const variable", $1);
+        if (v->spec.base != $3.type) {
+          fprintf(stderr, "Type mismatch in for loop update assignment\n");
+          exit(1);
+        }
+        
+        // Generate the assignment quadruple
+        emit(QUAD_ASSIGN, $3.place, NULL, $1);
+        v->has_value = 1;
+      }
+    | /* empty */         /* Allow empty third part */
+    ;
+
 
 switch_statement
     : SWITCH '(' expression ')' '{' 
@@ -526,17 +665,20 @@ switch_statement
           char *place = $3.place;
           emit(QUAD_ASSIGN, place, NULL, switch_expr);
           
-          // Store the switch expression for case comparisons
-          $<id>$ = switch_expr;
+
           
           // Generate end label
           char *end_label = new_label();
+          end_label_global=end_label;
+          switch_expr_global=switch_expr;
           $<id>$ = strdup(end_label);
+          $<id>1 = strdup(switch_expr);
+
         }
       case_list '}'
         {
           // Place end label
-          emit(QUAD_LABEL, $<id>6, NULL, NULL);
+          emit(QUAD_LABEL,end_label_global, NULL, NULL);
           
           if ($3.type != TYPE_INT) var_error("Switch expression must be int", "switch");
         }
@@ -545,12 +687,12 @@ switch_statement
 case_list
     : case_list CASE constant ':' 
         {
-          // Generate case label
-          char *case_label = new_label();
-          emit(QUAD_LABEL, case_label, NULL, NULL);
+          // // Generate case label
+          // char *case_label = new_label();
+          // emit(QUAD_LABEL, case_label, NULL, NULL);
           
           // Get the switch expression from the parent rule
-          char *switch_expr = $<id>0;
+          char *switch_expr = $<id>-5;
           
           // Generate comparison
           char *temp = new_temp();
@@ -566,10 +708,9 @@ case_list
         }
       statements
         {
-          // Jump to end after case body
-          emit(QUAD_JUMP, NULL, NULL, $<id>0);
+
           
-          // Place next label
+          // // Place next label
           emit(QUAD_LABEL, $<id>5, NULL, NULL);
         }
     | case_list DEFAULT ':' statements
@@ -635,28 +776,53 @@ expression
     : expression PLUS expression 
         { 
           char *temp = new_temp();
-          
+
           // Handle string concatenation as a special case
           if ($1.type == TYPE_STRING && $3.type == TYPE_STRING) {
             emit(QUAD_CONCAT, $1.place, $3.place, temp);
             $$.type = TYPE_STRING;
+          } else if ($1.type == TYPE_CHAR && $3.type == TYPE_STRING) {
+            // Convert char to string for concatenation
+            char *converted = new_temp();
+            emit(QUAD_CHAR_TO_STRING, $1.place, NULL, converted);
+            emit(QUAD_CONCAT, converted, $3.place, temp);
+            $$.type = TYPE_STRING;
+          } else if ($1.type == TYPE_STRING && $3.type == TYPE_CHAR) {
+            // Convert char to string for concatenation
+            char *converted = new_temp();
+            emit(QUAD_CHAR_TO_STRING, $3.place, NULL, converted);
+            emit(QUAD_CONCAT, $1.place, converted, temp);
+            $$.type = TYPE_STRING;
           } else {
-            // Check that types match and are numeric
-            if ($1.type != $3.type) {
-              fprintf(stderr, "Error: Type mismatch in addition operation\n");
-              exit(1);
+            // Handle numeric addition with type conversion
+            if ($1.type == TYPE_INT && $3.type == TYPE_FLOAT) {
+              char *converted = new_temp();
+              emit(QUAD_INT_TO_FLOAT, $1.place, NULL, converted);
+              emit(QUAD_ADD, converted, $3.place, temp);
+              $$.type = TYPE_FLOAT;
+            } else if ($1.type == TYPE_FLOAT && $3.type == TYPE_INT) {
+              char *converted = new_temp();
+              emit(QUAD_INT_TO_FLOAT, $3.place, NULL, converted);
+              emit(QUAD_ADD, $1.place, converted, temp);
+              $$.type = TYPE_FLOAT;
+            } else {
+              // Check that types match and are numeric
+              if ($1.type != $3.type) {
+                fprintf(stderr, "Error: Type mismatch in addition operation\n");
+                exit(1);
+              }
+
+              // Only int and float are allowed for addition
+              if ($1.type != TYPE_INT && $1.type != TYPE_FLOAT) {
+                fprintf(stderr, "Error: Addition operation requires numeric types\n");
+                exit(1);
+              }
+
+              emit(QUAD_ADD, $1.place, $3.place, temp);
+              $$.type = $1.type;
             }
-            
-            // Only int and float are allowed for addition
-            if ($1.type != TYPE_INT && $1.type != TYPE_FLOAT) {
-              fprintf(stderr, "Error: Addition operation requires numeric types\n");
-              exit(1);
-            }
-            
-            emit(QUAD_ADD, $1.place, $3.place, temp);
-            $$.type = $1.type;
           }
-          
+
           $$.place = temp;
           $$.is_literal = 0;
         }
@@ -691,6 +857,28 @@ expression
           // Check types - no strings allowed
           check_op_types($1.type, $3.type, "division", 0, 1);
           
+          // Check for division by zero for literals and known variables
+          if ($3.is_literal) {
+            // Direct check for literal zero values
+            if (($3.type == TYPE_INT && strcmp($3.place, "0") == 0) ||
+                ($3.type == TYPE_FLOAT && (strcmp($3.place, "0.0") == 0 || 
+                                          strcmp($3.place, "0.00") == 0 ||
+                                          strcmp($3.place, "0") == 0))) {
+              fprintf(stderr, "Error: Division by zero\n");
+              exit(1);
+            }
+          } else {
+            // For variables, check their value if known
+            Symbol *s = lookup_symbol($3.place);
+            if (s && s->has_value) {
+              if ((s->spec.base == TYPE_INT && s->value.int_val == 0) ||
+                  (s->spec.base == TYPE_FLOAT && s->value.float_val == 0.0)) {
+                fprintf(stderr, "Error: Division by zero (variable '%s' is 0)\n", $3.place);
+                exit(1);
+              }
+            }
+          }
+          
           emit(QUAD_DIV, $1.place, $3.place, temp);
           $$.type = $1.type;
           $$.place = temp;
@@ -710,6 +898,37 @@ expression
           $$.type = TYPE_INT;
           $$.place = temp;
           $$.is_literal = 0;
+        }
+    | MINUS expression %prec UMINUS
+        { 
+          char *temp = new_temp();
+          
+          // Only numeric types can be negated
+          if ($2.type != TYPE_INT && $2.type != TYPE_FLOAT) {
+            fprintf(stderr, "Error: Unary minus requires numeric type\n");
+            exit(1);
+          }
+          
+          // For literals, we can optimize by directly negating the value
+          if ($2.is_literal) {
+            if ($2.place[0] == '-') {
+              // Already negative, remove the minus sign
+              $$.place = strdup($2.place + 1);
+            } else {
+              // Add a minus sign
+              char *negated = malloc(strlen($2.place) + 2);
+              sprintf(negated, "-%s", $2.place);
+              $$.place = negated;
+            }
+            $$.type = $2.type;
+            $$.is_literal = 1;
+          } else {
+            // Use the dedicated NEG operation
+            emit(QUAD_NEG, $2.place, NULL, temp);
+            $$.place = temp;
+            $$.type = $2.type;
+            $$.is_literal = 0;
+          }
         }
     | expression EQ expression 
         { 
@@ -882,16 +1101,21 @@ expression
           $$.place = temp;
           $$.is_literal = 0;
         }
-    | '(' expression ')'
-        { 
-          $$.type = $2.type;
-          $$.place = $2.place;
-          $$.is_literal = $2.is_literal;
-        }
-    | IDENTIFIER
+    | primary_expression
+    ;
+
+
+/* New rule for primary expressions */
+primary_expression
+    : IDENTIFIER
         {
           Symbol *v = lookup_symbol($1);
-          if (!v) var_error("Undeclared variable", $1);
+          if (!v) var_error("Undeclared identifier", $1);
+          
+          if (v->kind == SYM_FUNC) {
+            fprintf(stderr, "Error: Function '%s' used without calling it\n", $1);
+            exit(1);
+          }
           
           // Check if variable has been initialized
           if (v->kind == SYM_VAR && !v->has_value) {
@@ -908,6 +1132,128 @@ expression
           $$.place = strdup($1);
           $$.is_literal = 0;
           fprintf(stderr, "DEBUG: IDENTIFIER: %s, type = %d\n", $1, $$.type);
+        }
+    | IDENTIFIER INC
+        {
+          Symbol *v = lookup_symbol($1);
+          if (!v || v->kind != SYM_VAR) var_error("Undeclared variable", $1);
+          if (v->spec.is_const) var_error("Cannot modify const variable", $1);
+          
+          // Check if the variable type is numeric
+          if (v->spec.base != TYPE_INT && v->spec.base != TYPE_FLOAT) {
+            fprintf(stderr, "Error: Increment operation requires numeric types (int or float)\n");
+            exit(1);
+          }
+          
+          // Generate temporary for the original value
+          // char *temp = new_temp();
+          // emit(QUAD_ASSIGN, $1, NULL, temp);
+          
+          // Generate increment operation after returning the original value
+          char *inc_temp = new_temp();
+          char *one = int_to_string(1);
+          
+          emit(QUAD_ADD, $1, one, inc_temp);
+          emit(QUAD_ASSIGN, inc_temp, NULL, $1);
+          
+          // Return the original value
+          $$.type = v->spec.base;
+          $$.place = inc_temp;
+          $$.is_literal = 0;
+          
+          // Mark as initialized
+          v->has_value = 1;
+        }
+    | IDENTIFIER DEC
+        {
+          // Similar to INC but with SUB operation
+          Symbol *v = lookup_symbol($1);
+          if (!v || v->kind != SYM_VAR) var_error("Undeclared variable", $1);
+          if (v->spec.is_const) var_error("Cannot modify const variable", $1);
+          
+          // Check if the variable type is numeric
+          if (v->spec.base != TYPE_INT && v->spec.base != TYPE_FLOAT) {
+            fprintf(stderr, "Error: Decrement operation requires numeric types (int or float)\n");
+            exit(1);
+          }
+          
+          // Generate temporary for the original value
+          char *temp = new_temp();
+          emit(QUAD_ASSIGN, $1, NULL, temp);
+          
+          // Generate decrement operation after returning the original value
+          char *dec_temp = new_temp();
+          char *one = int_to_string(1);
+          
+          emit(QUAD_SUB, $1, one, dec_temp);
+          emit(QUAD_ASSIGN, dec_temp, NULL, $1);
+          
+          // Return the original value
+          $$.type = v->spec.base;
+          $$.place = temp;
+          $$.is_literal = 0;
+          
+          // Mark as initialized
+          v->has_value = 1;
+        }        
+    | IDENTIFIER '(' ')'  // Function call with no arguments
+        {
+          Symbol *f = lookup_symbol($1);
+          if (!f || f->kind!=SYM_FUNC) var_error("Undeclared function", $1);
+          
+          // Check if function expects parameters
+          if (f->param_count > 0) {
+            fprintf(stderr, "Error: Function '%s' expects %d arguments, but none were provided\n", 
+                    $1, f->param_count);
+            exit(1);
+          }
+          
+          // Check for void function
+          if (f->spec.base == TYPE_VOID) {
+            fprintf(stderr, "Error: Cannot use void function '%s' in an expression\n", $1);
+            exit(1);
+          }
+          
+          // Generate temporary to hold the return value
+          char *temp = new_temp();
+          
+          // Generate call
+          emit(QUAD_CALL, $1, "0", temp);
+          
+          $$.type = f->spec.base;
+          $$.place = temp;
+          $$.is_literal = 0;
+        }
+    | IDENTIFIER '(' arg_list ')'  // Function call with arguments
+        {
+          Symbol *f = lookup_symbol($1);
+          if (!f || f->kind!=SYM_FUNC) var_error("Undeclared function", $1);
+          
+          // Check if argument count matches parameter count
+          int arg_count = $3;  // Use the returned value directly
+          if (arg_count != f->param_count) {
+            fprintf(stderr, "Error: Function '%s' expects %d arguments, but %d were provided\n", 
+                    $1, f->param_count, arg_count);
+            exit(1);
+          }
+          
+          // Check for void function
+          if (f->spec.base == TYPE_VOID) {
+            fprintf(stderr, "Error: Cannot use void function '%s' in an expression\n", $1);
+            exit(1);
+          }
+          
+          // Generate temporary to hold the return value
+          char *temp = new_temp();
+          
+          // Generate call with arguments
+          char arg_count_str[16];
+          snprintf(arg_count_str, sizeof(arg_count_str), "%d", arg_count);
+          emit(QUAD_CALL, $1, arg_count_str, temp);
+          
+          $$.type = f->spec.base;
+          $$.place = temp;
+          $$.is_literal = 0;
         }
     | NUMBER
         { 
@@ -944,12 +1290,47 @@ expression
           $$.is_literal = 1;
           fprintf(stderr, "DEBUG: STRING_LITERAL: value = %s\n", $1);
         }
-    ;
+    | '(' expression ')'
+        { 
+          $$.type = $2.type;
+          $$.place = $2.place;
+          $$.is_literal = $2.is_literal;
+        }
+    ;    
 %%
 
 void yyerror(const char *s) {
-    fprintf(stderr, "Error: %s\n", s);
-    exit(1);
+    extern char *yytext;
+    char *error_msg = (char *)s;
+    char *suggestion = "";
+    error_count++;
+    
+    // Check if it might be a missing semicolon
+    if (strstr(s, "syntax error") && 
+        (strstr(s, "unexpected identifier") || 
+         strstr(s, "unexpected IF") || 
+         strstr(s, "unexpected WHILE") || 
+         strstr(s, "unexpected RETURN") ||
+         strstr(s, "unexpected '}'") ||
+         strstr(s, "unexpected FOR"))) {
+        suggestion = " - Missing semicolon?";
+    }
+    
+    // The line number is off by 2 in this example, so adjust it
+    fprintf(stderr, "Error at line %d, column %d: %s%s\n", 
+            yylineno, column - yyleng, error_msg, suggestion);
+    
+    if (last_token) {
+        fprintf(stderr, "Near token: '%s'\n", last_token);
+    }
+}
+
+void token_seen(const char* token_text) {
+    if (last_token) {
+        free(last_token);
+    }
+    last_token = strdup(token_text);
+    column += yyleng;
 }
 
 void var_error(const char *message, const char *var_name) {
@@ -966,22 +1347,40 @@ int main(int argc, char **argv) {
     // Initialize quadruples system
     init_quadruples();
     
+    // Initialize error tracking
+    yylineno = 1;
+    column = 1;
+    error_count = 0;
+
+    for_count=0;
+
     int result = yyparse();
     
+    // Free our tracking resources
+    if (last_token) {
+        free(last_token);
+    }
+    
     // Print generated quadruples
-    if (result == 0) {
+    if (result == 0 && error_count == 0) {
         // Print to console
         check_unused_variables();
         print_quadruples(stdout);
         
         // Save to files
         print_quadruples_to_file("quadruples.txt");
-        print_symbol_table_to_file("symbols.txt");
+        // print_symbol_table_to_file("symbols.txt");
+        export_global_scope();
+
         
         printf("Compilation successful. Output written to:\n");
         printf("- quadruples.txt\n");
         printf("- symbols.txt\n");
+    } else {
+        fprintf(stderr, "Compilation failed with errors.\n");
     }
+    cleanup_symbol_table();
+
     
     return result ? 1 : 0;
 }
@@ -1003,6 +1402,10 @@ static int is_literal(const char *str) {
 
 void check_op_types(Type left_type, Type right_type, const char* op, int allow_strings, int allow_float) {
     // Check if types match
+    if (left_type == right_type) return;
+
+
+    
     if (left_type != right_type) {
         fprintf(stderr, "Error: Type mismatch in %s operation: cannot mix types\n", op);
         exit(1);

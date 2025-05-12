@@ -1,0 +1,16 @@
+==== QUADRUPLES ====
+  #  | Operation     | Arg1      | Arg2      | Result
+-----|---------------|-----------|-----------|----------
+   0 | PARAM         | a         | -         | -        
+   1 | PARAM         | b         | -         | -        
+   2 | LABEL         | add       | -         | -        
+   3 | ADD           | a         | b         | t0       
+   4 | RETURN        | t0        | -         | -        
+   5 | LABEL         | main      | -         | -        
+   6 | ASSIGN        | 2         | -         | x        
+   7 | ASSIGN        | 3         | -         | y        
+   8 | ARG           | x         | -         | -        
+   9 | ARG           | y         | -         | -        
+  10 | CALL          | add       | 2         | t1       
+  11 | ASSIGN        | t1        | -         | z        
+  12 | RETURN        | -         | -         | -        

@@ -1,0 +1,11 @@
+void main(){
+int a = 5;
+int b = 2;
+int sum = a + b;       // Addition
+int diff = a - b;      // Subtraction
+int prod = a * b;      // Multiplication
+int quot = a / b;      // Division
+int mod = a % b;       // Modulus
+int neg = -a;  
+return;
+}

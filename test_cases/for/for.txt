@@ -1,0 +1,9 @@
+void main()
+{
+int sum=0;
+int j=3;
+for (j = 0; j < 10; j=j+4) {
+    sum=sum+j;
+}
+return;
+}

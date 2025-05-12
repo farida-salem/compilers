@@ -1,0 +1,19 @@
+==== QUADRUPLES ====
+  #  | Operation     | Arg1      | Arg2      | Result
+-----|---------------|-----------|-----------|----------
+   0 | LABEL         | main      | -         | -        
+   1 | ASSIGN        | 5         | -         | a        
+   2 | ASSIGN        | 2         | -         | b        
+   3 | ADD           | a         | b         | t0       
+   4 | ASSIGN        | t0        | -         | sum      
+   5 | SUB           | a         | b         | t1       
+   6 | ASSIGN        | t1        | -         | diff     
+   7 | MUL           | a         | b         | t2       
+   8 | ASSIGN        | t2        | -         | prod     
+   9 | DIV           | a         | b         | t3       
+  10 | ASSIGN        | t3        | -         | quot     
+  11 | MOD           | a         | b         | t4       
+  12 | ASSIGN        | t4        | -         | mod      
+  13 | NEG           | a         | -         | t5       
+  14 | ASSIGN        | t5        | -         | neg      
+  15 | RETURN        | -         | -         | -        

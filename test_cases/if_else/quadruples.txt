@@ -1,0 +1,16 @@
+==== QUADRUPLES ====
+  #  | Operation     | Arg1      | Arg2      | Result
+-----|---------------|-----------|-----------|----------
+   0 | LABEL         | main      | -         | -        
+   1 | ASSIGN        | 10        | -         | a        
+   2 | MOD           | a         | 2         | t0       
+   3 | EQ            | t0        | 0         | t1       
+   4 | JUMPZ         | t1        | -         | L0       
+   5 | ADD           | a         | 10        | t2       
+   6 | ASSIGN        | t2        | -         | a        
+   7 | JUMP          | -         | -         | L1       
+   8 | LABEL         | L0        | -         | -        
+   9 | SUB           | a         | 1         | t3       
+  10 | ASSIGN        | t3        | -         | a        
+  11 | LABEL         | L1        | -         | -        
+  12 | RETURN        | -         | -         | -        

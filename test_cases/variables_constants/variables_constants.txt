@@ -1,0 +1,38 @@
+// Example program for variables and constants
+int main() {
+    // Basic variable declarations
+    int a;
+    float b;
+    char c;
+    string s;
+    
+    // Variable declarations with initialization
+    int x = 10;
+    float y = 3.14;
+    char z = 'A';
+    string msg = "Hello";
+    
+    // Constant declarations
+    const int MAX = 100;
+    const float PI = 3.14159;
+    const char GRADE = 'A';
+    const string GREETING = "Welcome";
+    
+    // Basic assignments
+    a = 5;
+    b = 2.5;
+    c = 'B';
+    s = "World";
+    
+    // Expressions with variables and constants
+    int sum = a + x;
+    float ratio = y / b;
+    
+    // Compound expressions
+    int result = (a + x) * (MAX - 5);
+    
+    // String operations
+    string full_message = msg + " " + s;
+    
+    return 0;
+}

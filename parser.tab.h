@@ -45,7 +45,7 @@
 extern int yydebug;
 #endif
 /* "%code requires" blocks.  */
-#line 27 "parser.y"
+#line 51 "parser.y"
 
   #include "symbol_table.h"
 
@@ -102,32 +102,29 @@ extern int yydebug;
     CASE = 270,                    /* CASE  */
     DEFAULT = 271,                 /* DEFAULT  */
     BREAK = 272,                   /* BREAK  */
-    CONTINUE = 273,                /* CONTINUE  */
-    RETURN = 274,                  /* RETURN  */
-    INT = 275,                     /* INT  */
-    FLOAT = 276,                   /* FLOAT  */
-    CHAR = 277,                    /* CHAR  */
-    STRING = 278,                  /* STRING  */
-    VOID = 279,                    /* VOID  */
-    CONST = 280,                   /* CONST  */
-    EQ = 281,                      /* EQ  */
-    NEQ = 282,                     /* NEQ  */
-    LE = 283,                      /* LE  */
-    GE = 284,                      /* GE  */
-    PLUS = 285,                    /* PLUS  */
-    MINUS = 286,                   /* MINUS  */
-    MULT = 287,                    /* MULT  */
-    DIV = 288,                     /* DIV  */
-    MOD = 289,                     /* MOD  */
-    AND = 290,                     /* AND  */
-    OR = 291,                      /* OR  */
-    NOT = 292,                     /* NOT  */
-    NO_ELSE = 293,                 /* NO_ELSE  */
-    BITWISE_OR = 294,              /* BITWISE_OR  */
-    BITWISE_AND = 295,             /* BITWISE_AND  */
-    BITWISE_NOT = 296,             /* BITWISE_NOT  */
-    INC = 297,                     /* INC  */
-    DEC = 298                      /* DEC  */
+    RETURN = 273,                  /* RETURN  */
+    INT = 274,                     /* INT  */
+    FLOAT = 275,                   /* FLOAT  */
+    CHAR = 276,                    /* CHAR  */
+    STRING = 277,                  /* STRING  */
+    VOID = 278,                    /* VOID  */
+    CONST = 279,                   /* CONST  */
+    EQ = 280,                      /* EQ  */
+    NEQ = 281,                     /* NEQ  */
+    LE = 282,                      /* LE  */
+    GE = 283,                      /* GE  */
+    PLUS = 284,                    /* PLUS  */
+    MINUS = 285,                   /* MINUS  */
+    MULT = 286,                    /* MULT  */
+    DIV = 287,                     /* DIV  */
+    MOD = 288,                     /* MOD  */
+    AND = 289,                     /* AND  */
+    OR = 290,                      /* OR  */
+    NOT = 291,                     /* NOT  */
+    INC = 292,                     /* INC  */
+    DEC = 293,                     /* DEC  */
+    NO_ELSE = 294,                 /* NO_ELSE  */
+    UMINUS = 295                   /* UMINUS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -136,7 +133,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 59 "parser.y"
+#line 83 "parser.y"
 
     int         num;
     double      fnum;  
@@ -147,7 +144,7 @@ union YYSTYPE
     IdList     *idlist;         /* for decl_list */
     ExprValue   expr;           /* for expressions - holds both place and type */
 
-#line 151 "parser.tab.h"
+#line 148 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -155,9 +152,23 @@ typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_DECLARED 1
 #endif
 
+/* Location type.  */
+#if ! defined YYLTYPE && ! defined YYLTYPE_IS_DECLARED
+typedef struct YYLTYPE YYLTYPE;
+struct YYLTYPE
+{
+  int first_line;
+  int first_column;
+  int last_line;
+  int last_column;
+};
+# define YYLTYPE_IS_DECLARED 1
+# define YYLTYPE_IS_TRIVIAL 1
+#endif
+
 
 extern YYSTYPE yylval;
-
+extern YYLTYPE yylloc;
 
 int yyparse (void);
 

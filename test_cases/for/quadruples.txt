@@ -1,0 +1,21 @@
+==== QUADRUPLES ====
+  #  | Operation     | Arg1      | Arg2      | Result
+-----|---------------|-----------|-----------|----------
+   0 | LABEL         | main      | -         | -        
+   1 | ASSIGN        | 0         | -         | sum      
+   2 | ASSIGN        | 3         | -         | j        
+   3 | ASSIGN        | 0         | -         | j        
+   4 | LABEL         | L0        | -         | -        
+   5 | LT            | j         | 10        | t0       
+   6 | JUMPZ         | t0        | -         | L3       
+   7 | JUMP          | -         | -         | L1       
+   8 | LABEL         | L2        | -         | -        
+   9 | ADD           | j         | 4         | t1       
+  10 | ASSIGN        | t1        | -         | j        
+  11 | JUMP          | -         | -         | L0       
+  12 | LABEL         | L1        | -         | -        
+  13 | ADD           | sum       | j         | t2       
+  14 | ASSIGN        | t2        | -         | sum      
+  15 | JUMP          | -         | -         | L2       
+  16 | LABEL         | L3        | -         | -        
+  17 | RETURN        | -         | -         | -        
